@@ -25,9 +25,9 @@ use isin::ISIN;
 fn main() -> Result<(), String> {
     let isin = ISIN::parse_strict("US0378331005")?;
     println!("ISIN: {}", isin.value()); // "US0378331005"
-    println!(isin.country_code()); // "US"
-    println!(isin.security_identifier()); // "037833100"
-    println!(isin.check_digit()); // "5"
+    println!("Country code: {}", isin.country_code()); // "US"
+    println!("Security identifier: {}", isin.security_identifier()); // "037833100"
+    println!("Check digit: {}", isin.check_digit()); // "5"
     Ok(())
 }
 ```
