@@ -256,6 +256,9 @@ mod tests {
         }
     }
 
+    /* Ensure the table-driven method gets the same answer as the functional style implementation
+     * for each allowed symbol by itself, which exercises the EVEN table, as counted from the right.
+     */
     #[test]
     fn single_chars() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
@@ -270,6 +273,10 @@ mod tests {
         }
     }
 
+    /* Ensure the table-driven method gets the same answer as the functional style implementation
+     * for each allowed symbol followed just by a single zero, which exercises the ODD table, as
+     * counted from the *right*.
+     */
     #[test]
     fn single_chars_left_of_zero() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
