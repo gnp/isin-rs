@@ -142,15 +142,18 @@ impl ISIN {
          * value.
          */
 
-        if cc.contains(|c: char| !(c.is_ascii_alphabetic() && c.is_uppercase())) {
+        let bad_country_code =
+            cc.contains(|c: char| !(c.is_ascii_alphabetic() && c.is_uppercase()));
+        if bad_country_code {
             return Err(String::from(
                 "First two characters of value must both be uppercase ASCII letters",
             ));
         }
 
-        if si.contains(|c: char| {
+        let bad_security_id = si.contains(|c: char| {
             (!c.is_ascii_alphanumeric()) || (c.is_ascii_alphabetic() && !c.is_uppercase())
-        }) {
+        });
+        if bad_security_id {
             return Err(String::from(
                 "Third through 11th characters of value must all be uppercase ASCII alphanumerics",
             ));
