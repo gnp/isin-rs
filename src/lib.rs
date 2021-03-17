@@ -205,7 +205,7 @@ impl ISIN {
         &(self.value)[2..11]
     }
 
-    /// Return the "payload" -- everything but the check digit.
+    /// Return the &ldquo;payload&rdquo; &mdash; everything but the check digit.
     pub fn payload(&self) -> &str {
         &(self.value)[0..11]
     }
