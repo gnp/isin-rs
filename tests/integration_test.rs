@@ -9,6 +9,6 @@ fn test_readme_example_main() {
             println!("  Security identifier: {}", isin.security_identifier()); // "037833100"
             println!("  Check digit: {}", isin.check_digit()); // "5"
         }
-        Err(err_string) => panic!("Unable to parse ISIN {}: {}", isin_string, err_string),
+        Err(err) => panic!("Unable to parse ISIN {}: {}", isin_string, err),
     }
 }

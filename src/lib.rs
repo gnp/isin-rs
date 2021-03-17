@@ -20,23 +20,75 @@
 //! Use the `ISIN::parse_loose()` or `ISIN::parse_strict()` methods to convert a string to a
 //! validated ISIN.
 
-use std::fmt;
+use std::error::Error;
+use std::fmt::Display;
 use std::fmt::Formatter;
 use std::str::FromStr;
+
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ParseError {
+    /// The input length is not exactly 12 bytes.
+    InvalidLength { was: usize },
+    /// The input country code is not two uppercase ASCII alphabetic characters.
+    InvalidCountryCode { was: String },
+    /// The input security identifier is not nine uppercase ASCII alphanumeric characters.
+    InvalidSecurityIdentifier { was: String },
+    /// The input check digit is not a single ASCII decimal digit character.
+    InvalidCheckDigit { was: String },
+    /// The input check digit has in a valid format, but has an incorrect value.
+    IncorrectCheckDigit { was: char, expected: char },
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseError::InvalidLength { was } => {
+                write!(f, "invalid length {} bytes when expecting 12", was)
+            }
+            ParseError::InvalidCountryCode { was } => {
+                write!(
+                    f,
+                    "invalid country code '{}' is not two uppercase ASCII alphabetic characters",
+                    was
+                )
+            }
+            ParseError::InvalidSecurityIdentifier { was } => {
+                write!(f, "invalid security identifier '{}' is not nine uppercase ASCII alphanumeric characters", was)
+            }
+            ParseError::InvalidCheckDigit { was } => {
+                write!(
+                    f,
+                    "invalid check digit '{}' is not one ASCII decimal digit",
+                    was
+                )
+            }
+            ParseError::IncorrectCheckDigit { was, expected } => {
+                write!(
+                    f,
+                    "incorrect check digit '{}' when expecting '{}'",
+                    was, expected
+                )
+            }
+        }
+    }
+}
+
+impl Error for ParseError {}
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
 pub struct ISIN {
     value: String,
 }
 
-impl fmt::Display for ISIN {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+impl Display for ISIN {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "ISIN({})", self.value)
     }
 }
 
 impl FromStr for ISIN {
-    type Err = String;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         ISIN::parse_loose(s)
@@ -121,13 +173,13 @@ impl ISIN {
     /** Parse a string to a valid ISIN or an error message, requiring the string to already be only
     uppercase alphanumerics with no leading or trailing whitespace in addition to being the
     right length and format. */
-    pub fn parse_strict<S>(value: S) -> Result<ISIN, String>
+    pub fn parse_strict<S>(value: S) -> Result<ISIN, ParseError>
     where
         S: Into<String>,
     {
         let v: String = value.into();
         if v.len() != 12 {
-            return Err(String::from("Value must be exactly 12 bytes long"));
+            return Err(ParseError::InvalidLength { was: v.len() });
         }
 
         // Here we assume all characters in the string are ASCII and thus one byte long.
@@ -142,27 +194,28 @@ impl ISIN {
          * value.
          */
 
-        let bad_country_code =
+        let invalid_country_code =
             cc.contains(|c: char| !(c.is_ascii_alphabetic() && c.is_uppercase()));
-        if bad_country_code {
-            return Err(String::from(
-                "First two characters of value must both be uppercase ASCII letters",
-            ));
+        if invalid_country_code {
+            return Err(ParseError::InvalidCountryCode {
+                was: String::from(cc),
+            });
         }
 
-        let bad_security_id = si.contains(|c: char| {
+        let invalid_security_id = si.contains(|c: char| {
             (!c.is_ascii_alphanumeric()) || (c.is_ascii_alphabetic() && !c.is_uppercase())
         });
-        if bad_security_id {
-            return Err(String::from(
-                "Third through 11th characters of value must all be uppercase ASCII alphanumerics",
-            ));
+        if invalid_security_id {
+            return Err(ParseError::InvalidSecurityIdentifier {
+                was: String::from(si),
+            });
         }
 
-        if cd.contains(|c: char| !c.is_ascii_digit()) {
-            return Err(String::from(
-                "Last character of value must be an ASCII digit",
-            ));
+        let invalid_check_digit = cd.contains(|c: char| !c.is_ascii_digit());
+        if invalid_check_digit {
+            return Err(ParseError::InvalidCheckDigit {
+                was: String::from(cd),
+            });
         }
 
         /* Now, we need to compute the correct check digit value from the "payload" (the country
@@ -171,13 +224,15 @@ impl ISIN {
 
         let payload = &v[0..11];
 
-        let digit_char = Self::compute_check_digit(payload);
+        let computed_check_digit = Self::compute_check_digit(payload);
+        let input_check_digit = cd.as_bytes()[0] as char;
 
-        if (cd.as_bytes()[0] as char) != digit_char {
-            return Err(format!(
-                "Payload check digit {} does not match computed check digit {}",
-                cd, digit_char
-            ));
+        let incorrect_check_digit = input_check_digit != computed_check_digit;
+        if incorrect_check_digit {
+            return Err(ParseError::IncorrectCheckDigit {
+                was: input_check_digit,
+                expected: computed_check_digit,
+            });
         }
 
         Ok(ISIN { value: v })
@@ -186,7 +241,7 @@ impl ISIN {
     /** Parse a string to a valid ISIN or an error message, allowing the string to contain leading
     or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
     and format. */
-    pub fn parse_loose<S>(value: S) -> Result<ISIN, String>
+    pub fn parse_loose<S>(value: S) -> Result<ISIN, ParseError>
     where
         S: Into<String>,
     {
@@ -314,57 +369,47 @@ mod tests {
     }
 
     #[test]
-    fn parse_isin_for_apple_strict() -> Result<(), String> {
-        let isin = ISIN::parse_strict("US0378331005")?;
-        assert_eq!(isin.value(), "US0378331005");
-        assert_eq!(isin.country_code(), "US");
-        assert_eq!(isin.security_identifier(), "037833100");
-        assert_eq!(isin.check_digit(), "5");
-        Ok(())
+    fn parse_isin_for_apple_strict() {
+        match ISIN::parse_strict("US0378331005") {
+            Ok(isin) => {
+                assert_eq!(isin.value(), "US0378331005");
+                assert_eq!(isin.country_code(), "US");
+                assert_eq!(isin.security_identifier(), "037833100");
+                assert_eq!(isin.check_digit(), "5");
+            }
+            Err(_) => assert!(false, "Did not expect parsing to fail"),
+        }
     }
 
     #[test]
-    fn parse_isin_for_apple_loose() -> Result<(), String> {
-        let isin = ISIN::parse_loose("\tus0378331005    ")?;
-        assert_eq!(isin.value(), "US0378331005");
-        assert_eq!(isin.country_code(), "US");
-        assert_eq!(isin.security_identifier(), "037833100");
-        assert_eq!(isin.check_digit(), "5");
-        Ok(())
+    fn parse_isin_for_apple_loose() {
+        match ISIN::parse_loose("\tus0378331005    ") {
+            Ok(isin) => {
+                assert_eq!(isin.value(), "US0378331005");
+                assert_eq!(isin.country_code(), "US");
+                assert_eq!(isin.security_identifier(), "037833100");
+                assert_eq!(isin.check_digit(), "5");
+            }
+            Err(_) => assert!(false, "Did not expect parsing to fail"),
+        }
     }
 
     #[test]
     fn reject_empty_string() {
         let res = ISIN::parse_strict("");
         assert!(res.is_err());
-        assert_eq!(
-            res.err(),
-            Some(String::from("Value must be exactly 12 bytes long"))
-        );
     }
 
     #[test]
     fn reject_lowercase_country_code_if_strict() {
         let res = ISIN::parse_strict("us0378331005");
         assert!(res.is_err());
-        assert_eq!(
-            res.err(),
-            Some(String::from(
-                "First two characters of value must both be uppercase ASCII letters"
-            ))
-        );
     }
 
     #[test]
     fn reject_lowercase_security_id_if_strict() {
         let res = ISIN::parse_strict("US09739d1000");
         assert!(res.is_err());
-        assert_eq!(
-            res.err(),
-            Some(String::from(
-                "Third through 11th characters of value must all be uppercase ASCII alphanumerics"
-            ))
-        );
     }
 
     #[test]
