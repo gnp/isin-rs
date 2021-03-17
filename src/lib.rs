@@ -291,6 +291,23 @@ mod tests {
         }
     }
 
+    /* Ensure the table-driven method gets the same answer as the functional style implementation
+     * for each allowed symbol preceded just by a single nine, which exercises the WIDTH table.
+     */
+    #[test]
+    fn nine_left_of_single_chars() {
+        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
+            let s = format!("9{}", c);
+            let a = compute_checksum_functional_style(&s);
+            let b = ISIN::compute_checksum(&s);
+            assert_eq!(
+                a, b,
+                "checksum from library {} should equal that from functional style {} for \"{}\"",
+                b, a, s
+            );
+        }
+    }
+
     #[test]
     fn parse_isin_for_apple_strict() -> Result<(), String> {
         let isin = ISIN::parse_strict("US0378331005")?;
