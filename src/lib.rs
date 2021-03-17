@@ -364,4 +364,53 @@ mod tests {
         );
     }
 
+    #[test]
+    fn parse_isin_with_0_check_digit() {
+        ISIN::parse_strict("US09739D1000").unwrap(); // BCC aka Boise Cascade
+    }
+
+    #[test]
+    fn parse_isin_with_1_check_digit() {
+        ISIN::parse_strict("US4581401001").unwrap(); // INTC aka Intel
+    }
+
+    #[test]
+    fn parse_isin_with_2_check_digit() {
+        ISIN::parse_strict("US98421M1062").unwrap(); // XRX aka Xerox
+    }
+
+    #[test]
+    fn parse_isin_with_3_check_digit() {
+        ISIN::parse_strict("US02376R1023").unwrap(); // AAL aka American Airlines
+    }
+
+    #[test]
+    fn parse_isin_with_4_check_digit() {
+        ISIN::parse_strict("US9216591084").unwrap(); // VNDA aka Vanda Pharmaceuticals
+    }
+
+    #[test]
+    fn parse_isin_with_5_check_digit() {
+        ISIN::parse_strict("US0207721095").unwrap(); // APT aka AlphaProTec
+    }
+
+    #[test]
+    fn parse_isin_with_6_check_digit() {
+        ISIN::parse_strict("US71363P1066").unwrap(); // PRDO aka Perdoceo Education
+    }
+
+    #[test]
+    fn parse_isin_with_7_check_digit() {
+        ISIN::parse_strict("US5915202007").unwrap(); // MEI aka Methode Electronics
+    }
+
+    #[test]
+    fn parse_isin_with_8_check_digit() {
+        ISIN::parse_strict("US4570301048").unwrap(); // IMKTA aka Ingles Markets
+    }
+
+    #[test]
+    fn parse_isin_with_9_check_digit() {
+        ISIN::parse_strict("US8684591089").unwrap(); // SUPN aka Supernus Pharmaceuticals
+    }
 }
