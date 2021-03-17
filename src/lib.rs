@@ -142,15 +142,17 @@ impl ISIN {
          * value.
          */
 
-        if cc.contains(|c: char| !c.is_ascii_alphabetic()) {
+        if cc.contains(|c: char| !(c.is_ascii_alphabetic() && c.is_uppercase())) {
             return Err(String::from(
-                "First two characters of value must all be ASCII letters",
+                "First two characters of value must both be uppercase ASCII letters",
             ));
         }
 
-        if si.contains(|c: char| !c.is_ascii_alphanumeric()) {
+        if si.contains(|c: char| {
+            (!c.is_ascii_alphanumeric()) || (c.is_ascii_alphabetic() && !c.is_uppercase())
+        }) {
             return Err(String::from(
-                "Third through 11th characters of value must all be ASCII alphanumerics",
+                "Third through 11th characters of value must all be uppercase ASCII alphanumerics",
             ));
         }
 
@@ -337,4 +339,29 @@ mod tests {
             Some(String::from("Value must be exactly 12 bytes long"))
         );
     }
+
+    #[test]
+    fn reject_lowercase_country_code_if_strict() {
+        let res = ISIN::parse_strict("us0378331005");
+        assert!(res.is_err());
+        assert_eq!(
+            res.err(),
+            Some(String::from(
+                "First two characters of value must both be uppercase ASCII letters"
+            ))
+        );
+    }
+
+    #[test]
+    fn reject_lowercase_security_id_if_strict() {
+        let res = ISIN::parse_strict("US09739d1000");
+        assert!(res.is_err());
+        assert_eq!(
+            res.err(),
+            Some(String::from(
+                "Third through 11th characters of value must all be uppercase ASCII alphanumerics"
+            ))
+        );
+    }
+
 }
