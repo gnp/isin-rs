@@ -85,9 +85,8 @@ impl ISIN {
     }
 
     /** Compute the _checksum_ for a string. No attempt is made to ensure the input string is in
-     * the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
-     * ASCII uppercase letter) is encountered, this function will panic.
-     */
+    the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
+    ASCII uppercase letter) is encountered, this function will panic. */
     pub fn compute_checksum(s: &str) -> u8 {
         let mut sum: u8 = 0;
         let mut idx: usize = 0;
@@ -112,18 +111,16 @@ impl ISIN {
     }
 
     /** Compute the _check digit_ for a string. No attempt is made to ensure the input string is in
-     * the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
-     * ASCII uppercase letter) is encountered, this function will panic.
-     */
+    the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
+    ASCII uppercase letter) is encountered, this function will panic. */
     pub fn compute_check_digit(s: &str) -> char {
         let sum = Self::compute_checksum(s);
         (b'0' + sum) as char
     }
 
     /** Parse a string to a valid ISIN or an error message, requiring the string to already be only
-     * uppercase alphanumerics with no leading or trailing whitespace in addition to being the
-     * right length and format.
-     */
+    uppercase alphanumerics with no leading or trailing whitespace in addition to being the
+    right length and format. */
     pub fn parse_strict<S>(value: S) -> Result<ISIN, String>
     where
         S: Into<String>,
@@ -182,9 +179,8 @@ impl ISIN {
     }
 
     /** Parse a string to a valid ISIN or an error message, allowing the string to contain leading
-     * or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
-     * and format.
-     */
+    or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
+    and format. */
     pub fn parse_loose<S>(value: S) -> Result<ISIN, String>
     where
         S: Into<String>,
