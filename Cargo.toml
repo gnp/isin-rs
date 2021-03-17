@@ -1,6 +1,6 @@
 [package]
 name = "isin"
-version = "0.1.2"
+version = "0.1.3"
 description = "Support for creating and validating ISINs"
 authors = ["Gregor Purdy <gregor@abcelo.com>"]
 license = "MIT OR Apache-2.0"
