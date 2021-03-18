@@ -25,6 +25,10 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::str::FromStr;
 
+pub mod checksum;
+
+use checksum::checksum_table;
+
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ParseError {
@@ -96,73 +100,11 @@ impl FromStr for ISIN {
 }
 
 impl ISIN {
-    // The width in "steps" each char value consumes when processed. All decimal digits have width
-    // one, and all letters have width two (because their values are two digits, from 10 to 35
-    // inclusive).
-    const WIDTHS: [u8; 36] = [
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2,
-    ];
-
-    // The net value added to the sum for each char value, if the step count (aka index) at the
-    // start of processing that character is odd. Odds vs. evens differ because evens go through
-    // doubling and potentially splitting into two digits before being summed to make the net value.
-    const ODDS: [u8; 36] = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3,
-        6, 7, 8, 9, 0, 1,
-    ];
-
-    // The net value added to the sum for each char value, if the step count (aka index) at the
-    // start of processing that character is even. Odds vs. evens differ because evens go through
-    // doubling and potentially splitting into two digits before being summed to make the net value.
-    const EVENS: [u8; 36] = [
-        0, 2, 4, 6, 8, 1, 3, 5, 7, 9, 1, 3, 5, 7, 9, 2, 4, 6, 8, 0, 2, 4, 6, 8, 0, 3, 5, 7, 9, 1,
-        3, 5, 7, 9, 1, 4,
-    ];
-
-    // The numeric value of a char. Digit characters '0' through '9' map to values 0 through 9, and
-    // letter characters 'A' through 'Z' map to values 10 through 35.
-    fn char_value(c: char) -> u8 {
-        if ('0'..='9').contains(&c) {
-            (c as u8) - b'0'
-        } else if ('A'..='Z').contains(&c) {
-            (c as u8) - b'A' + 10
-        } else {
-            panic!("Non-ASCII-alphanumeric characters should be impossible here!");
-        }
-    }
-
-    /// Compute the _checksum_ for a string. No attempt is made to ensure the input string is in
-    /// the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
-    /// ASCII uppercase letter) is encountered, this function will panic.
-    pub fn compute_checksum(s: &str) -> u8 {
-        let mut sum: u8 = 0;
-        let mut idx: usize = 0;
-        for c in s.chars().rev() {
-            let v = Self::char_value(c);
-            let w = Self::WIDTHS[v as usize];
-            let x = if (idx % 2) == 0 {
-                Self::EVENS[v as usize]
-            } else {
-                Self::ODDS[v as usize]
-            };
-            sum = (sum + x) % 10;
-            idx += w as usize;
-        }
-
-        let diff = 10 - sum;
-        if diff == 10 {
-            0
-        } else {
-            diff
-        }
-    }
-
     /// Compute the _check digit_ for a string. No attempt is made to ensure the input string is in
     /// the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
     /// ASCII uppercase letter) is encountered, this function will panic.
     pub fn compute_check_digit(s: &str) -> char {
-        let sum = Self::compute_checksum(s);
+        let sum = checksum_table(s);
         (b'0' + sum) as char
     }
 
@@ -273,91 +215,6 @@ impl ISIN {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // Direct translation of the formula definition, in the functional style.
-    fn compute_checksum_functional_style(s: &str) -> u8 {
-        fn digits_of(x: u8) -> Vec<u8> {
-            if x >= 10 {
-                vec![x / 10, x % 10]
-            } else {
-                vec![x]
-            }
-        }
-
-        let sum: u32 = s
-            .chars()
-            .map(ISIN::char_value)
-            .flat_map(|x| digits_of(x))
-            .rev()
-            .enumerate()
-            .flat_map(|(i, x)| {
-                if (i % 2) == 0 {
-                    digits_of(x * 2)
-                } else {
-                    digits_of(x)
-                }
-            })
-            .map(|x| x as u32)
-            .sum();
-
-        let sum = (sum % 10) as u8;
-
-        let diff = 10 - sum;
-        if diff == 10 {
-            0
-        } else {
-            diff
-        }
-    }
-
-    // Ensure the table-driven method gets the same answer as the functional style implementation
-    // for each allowed symbol by itself, which exercises the EVEN table, as counted from the right.
-    #[test]
-    fn single_chars() {
-        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
-            let s = c.to_string();
-            let a = compute_checksum_functional_style(&s);
-            let b = ISIN::compute_checksum(&s);
-            assert_eq!(
-                a, b,
-                "checksum from library {} should equal that from functional style {} for \"{}\"",
-                b, a, s
-            );
-        }
-    }
-
-    // Ensure the table-driven method gets the same answer as the functional style implementation
-    // for each allowed symbol followed just by a single zero, which exercises the ODD table, as
-    // counted from the *right*.
-    #[test]
-    fn single_chars_left_of_zero() {
-        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
-            let s = format!("{}0", c);
-            let a = compute_checksum_functional_style(&s);
-            let b = ISIN::compute_checksum(&s);
-            assert_eq!(
-                a, b,
-                "checksum from library {} should equal that from functional style {} for \"{}\"",
-                b, a, s
-            );
-        }
-    }
-
-    // Ensure the table-driven method gets the same answer as the functional style implementation
-    // for each allowed symbol preceded just by a single nine, which exercises the WIDTH table.
-    #[test]
-    fn nine_left_of_single_chars() {
-        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
-            let s = format!("9{}", c);
-            let a = compute_checksum_functional_style(&s);
-            let b = ISIN::compute_checksum(&s);
-            assert_eq!(
-                a, b,
-                "checksum from library {} should equal that from functional style {} for \"{}\"",
-                b, a, s
-            );
-        }
-    }
 
     #[test]
     fn parse_isin_for_apple_strict() {

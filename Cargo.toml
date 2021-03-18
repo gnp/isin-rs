@@ -9,4 +9,11 @@ keywords = ["isin", "identifier", "finance", "equity", "stock"]
 readme = "README.md"
 repository = "https://github.com/gnp/isin-rs.git"
 
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }
+
 [dependencies]
+
+[[bench]]
+name = "checksum_compare"
+harness = false
