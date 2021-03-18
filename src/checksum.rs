@@ -195,7 +195,13 @@ mod tests {
     proptest! {
         #[test]
         fn processes_all_valid_strings(s in "[A-Z]{2}[0-9A-Z]{9}") {
-            checksum_table(&s);
+            let a = checksum_functional(&s);
+            let b = checksum_table(&s);
+            assert_eq!(
+                a, b,
+                "checksum from library {} should equal that from functional style {} for \"{}\"",
+                b, a, s
+            );
         }
     }
 }
