@@ -96,36 +96,32 @@ impl FromStr for ISIN {
 }
 
 impl ISIN {
-    /* The width in "steps" each char value consumes when processed. All decimal digits have width
-     * one, and all letters have width two (because their values are two digits, from 10 to 35
-     * inclusive).
-     */
+    // The width in "steps" each char value consumes when processed. All decimal digits have width
+    // one, and all letters have width two (because their values are two digits, from 10 to 35
+    // inclusive).
     const WIDTHS: [u8; 36] = [
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
         2, 2, 2, 2, 2, 2,
     ];
 
-    /* The net value added to the sum for each char value, if the step count (aka index) at the
-     * start of processing that character is odd. Odds vs. evens differ because evens go through
-     * doubling and potentially splitting into two digits before being summed to make the net value.
-     */
+    // The net value added to the sum for each char value, if the step count (aka index) at the
+    // start of processing that character is odd. Odds vs. evens differ because evens go through
+    // doubling and potentially splitting into two digits before being summed to make the net value.
     const ODDS: [u8; 36] = [
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3,
         6, 7, 8, 9, 0, 1,
     ];
 
-    /* The net value added to the sum for each char value, if the step count (aka index) at the
-     * start of processing that character is even. Odds vs. evens differ because evens go through
-     * doubling and potentially splitting into two digits before being summed to make the net value.
-     */
+    // The net value added to the sum for each char value, if the step count (aka index) at the
+    // start of processing that character is even. Odds vs. evens differ because evens go through
+    // doubling and potentially splitting into two digits before being summed to make the net value.
     const EVENS: [u8; 36] = [
         0, 2, 4, 6, 8, 1, 3, 5, 7, 9, 1, 3, 5, 7, 9, 2, 4, 6, 8, 0, 2, 4, 6, 8, 0, 3, 5, 7, 9, 1,
         3, 5, 7, 9, 1, 4,
     ];
 
-    /* The numeric value of a char. Digit characters '0' through '9' map to values 0 through 9, and
-     * letter characters 'A' through 'Z' map to values 10 through 35.
-     */
+    // The numeric value of a char. Digit characters '0' through '9' map to values 0 through 9, and
+    // letter characters 'A' through 'Z' map to values 10 through 35.
     fn char_value(c: char) -> u8 {
         if ('0'..='9').contains(&c) {
             (c as u8) - b'0'
@@ -136,9 +132,9 @@ impl ISIN {
         }
     }
 
-    /** Compute the _checksum_ for a string. No attempt is made to ensure the input string is in
-    the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
-    ASCII uppercase letter) is encountered, this function will panic. */
+    /// Compute the _checksum_ for a string. No attempt is made to ensure the input string is in
+    /// the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
+    /// ASCII uppercase letter) is encountered, this function will panic.
     pub fn compute_checksum(s: &str) -> u8 {
         let mut sum: u8 = 0;
         let mut idx: usize = 0;
@@ -162,17 +158,17 @@ impl ISIN {
         }
     }
 
-    /** Compute the _check digit_ for a string. No attempt is made to ensure the input string is in
-    the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
-    ASCII uppercase letter) is encountered, this function will panic. */
+    /// Compute the _check digit_ for a string. No attempt is made to ensure the input string is in
+    /// the ISIN payload format or length. If an illegal character (not an ASCII digit and not an
+    /// ASCII uppercase letter) is encountered, this function will panic.
     pub fn compute_check_digit(s: &str) -> char {
         let sum = Self::compute_checksum(s);
         (b'0' + sum) as char
     }
 
-    /** Parse a string to a valid ISIN or an error message, requiring the string to already be only
-    uppercase alphanumerics with no leading or trailing whitespace in addition to being the
-    right length and format. */
+    /// Parse a string to a valid ISIN or an error message, requiring the string to already be only
+    /// uppercase alphanumerics with no leading or trailing whitespace in addition to being the
+    /// right length and format.
     pub fn parse_strict<S>(value: S) -> Result<ISIN, ParseError>
     where
         S: Into<String>,
@@ -188,11 +184,10 @@ impl ISIN {
         let si = &v[2..11];
         let cd = &v[11..12];
 
-        /* Now, we test that assumption on each field of the value, left to right. Documentation for
-         * contains() does not say that it can panic, so not sure what it will do in the case of a
-         * partial UTF-8 character at the start or end boundary of the str within the input String
-         * value.
-         */
+        // Now, we test that assumption on each field of the value, left to right. Documentation for
+        // contains() does not say that it can panic, so not sure what it will do in the case of a
+        // partial UTF-8 character at the start or end boundary of the str within the input String
+        // value.
 
         let invalid_country_code =
             cc.contains(|c: char| !(c.is_ascii_alphabetic() && c.is_uppercase()));
@@ -218,9 +213,8 @@ impl ISIN {
             });
         }
 
-        /* Now, we need to compute the correct check digit value from the "payload" (the country
-         * code and security identifier fields).
-         */
+        // Now, we need to compute the correct check digit value from the "payload" (the country
+        // code and security identifier fields).
 
         let payload = &v[0..11];
 
@@ -238,9 +232,9 @@ impl ISIN {
         Ok(ISIN { value: v })
     }
 
-    /** Parse a string to a valid ISIN or an error message, allowing the string to contain leading
-    or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
-    and format. */
+    /// Parse a string to a valid ISIN or an error message, allowing the string to contain leading
+    /// or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
+    /// and format.
     pub fn parse_loose<S>(value: S) -> Result<ISIN, ParseError>
     where
         S: Into<String>,
@@ -316,9 +310,8 @@ mod tests {
         }
     }
 
-    /* Ensure the table-driven method gets the same answer as the functional style implementation
-     * for each allowed symbol by itself, which exercises the EVEN table, as counted from the right.
-     */
+    // Ensure the table-driven method gets the same answer as the functional style implementation
+    // for each allowed symbol by itself, which exercises the EVEN table, as counted from the right.
     #[test]
     fn single_chars() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
@@ -333,10 +326,9 @@ mod tests {
         }
     }
 
-    /* Ensure the table-driven method gets the same answer as the functional style implementation
-     * for each allowed symbol followed just by a single zero, which exercises the ODD table, as
-     * counted from the *right*.
-     */
+    // Ensure the table-driven method gets the same answer as the functional style implementation
+    // for each allowed symbol followed just by a single zero, which exercises the ODD table, as
+    // counted from the *right*.
     #[test]
     fn single_chars_left_of_zero() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
@@ -351,9 +343,8 @@ mod tests {
         }
     }
 
-    /* Ensure the table-driven method gets the same answer as the functional style implementation
-     * for each allowed symbol preceded just by a single nine, which exercises the WIDTH table.
-     */
+    // Ensure the table-driven method gets the same answer as the functional style implementation
+    // for each allowed symbol preceded just by a single nine, which exercises the WIDTH table.
     #[test]
     fn nine_left_of_single_chars() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
