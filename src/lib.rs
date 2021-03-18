@@ -195,7 +195,7 @@ impl ISIN {
 
     /// Return the underlying string value of the ISIN.
     pub fn value(&self) -> &str {
-        &*(self.value)
+        &self.value
     }
 
     /// Return just the _country code_ portion of the ISIN.
