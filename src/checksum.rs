@@ -141,6 +141,7 @@ pub fn checksum_table(s: &str) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     // Ensure the table-driven method gets the same answer as the functional style implementation
     // for each allowed symbol by itself, which exercises the EVEN table, as counted from the right.
@@ -188,6 +189,13 @@ mod tests {
                 "checksum from library {} should equal that from functional style {} for \"{}\"",
                 b, a, s
             );
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn processes_all_valid_strings(s in "[A-Z]{2}[0-9A-Z]{9}") {
+            checksum_table(&s);
         }
     }
 }

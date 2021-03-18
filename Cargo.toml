@@ -10,6 +10,7 @@ readme = "README.md"
 repository = "https://github.com/gnp/isin-rs.git"
 
 [dev-dependencies]
+proptest = "1.0"
 criterion = { version = "0.3", features = ["html_reports"] }
 
 [dependencies]

@@ -32,6 +32,8 @@ use checksum::checksum_table;
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ParseError {
+    /// The input contains non-ASCII characters.
+    NonAscii { was: String },
     /// The input length is not exactly 12 bytes.
     InvalidLength { was: usize },
     /// The input country code is not two uppercase ASCII alphabetic characters.
@@ -47,6 +49,9 @@ pub enum ParseError {
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            ParseError::NonAscii { was } => {
+                write!(f, "one or more non-ASCII characters in '{}'", was)
+            }
             ParseError::InvalidLength { was } => {
                 write!(f, "invalid length {} bytes when expecting 12", was)
             }
@@ -116,20 +121,22 @@ impl ISIN {
         S: Into<String>,
     {
         let v: String = value.into();
+
+        if !v.is_ascii() {
+            return Err(ParseError::NonAscii { was: v });
+        }
+
         if v.len() != 12 {
             return Err(ParseError::InvalidLength { was: v.len() });
         }
 
-        // Here we assume all characters in the string are ASCII and thus one byte long.
+        // Because the string is pure ASCII, we can slice fields assuming one-byte characters
 
         let cc = &v[0..2];
         let si = &v[2..11];
         let cd = &v[11..12];
 
-        // Now, we test that assumption on each field of the value, left to right. Documentation for
-        // contains() does not say that it can panic, so not sure what it will do in the case of a
-        // partial UTF-8 character at the start or end boundary of the str within the input String
-        // value.
+        // Now, we validate the format of each fields
 
         let invalid_country_code =
             cc.contains(|c: char| !(c.is_ascii_alphabetic() && c.is_uppercase()));
@@ -215,6 +222,7 @@ impl ISIN {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     #[test]
     fn parse_isin_for_apple_strict() {
@@ -308,5 +316,18 @@ mod tests {
     #[test]
     fn parse_isin_with_9_check_digit() {
         ISIN::parse_strict("US8684591089").unwrap(); // SUPN aka Supernus Pharmaceuticals
+    }
+
+    #[test]
+    fn test_unicode_gibberish() {
+        assert_eq!(true, ISIN::parse_strict("𑴈𐎟 0 A").is_err());
+    }
+
+    proptest! {
+        #[test]
+        #[allow(unused_must_use)]
+        fn doesnt_crash(s in "\\PC*") {
+            ISIN::parse_strict(&s);
+        }
     }
 }
