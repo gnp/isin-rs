@@ -25,8 +25,8 @@
 //!
 //! Benchmarking shows the table-driven implementation to be around 70 to 90 times faster
 //! than the functional style (on the test system, average run time decreases from around 2.1 to 2.9
-//! ms with the functional style to around 30.6 ns with the table-driven style). Input-dependent
-//! variability in run time decreased also from about +/- 20% for the functional-style to negligible
+//! us with the functional style to around 30.6 ns with the table-driven style). Input-dependent
+//! variability in run time decreases also from about +/- 20% for the functional-style to negligible
 //! for the table-driven style.
 
 /// The numeric value of a char. Digit characters '0' through '9' map to values 0 through 9, and
