@@ -92,7 +92,7 @@ pub struct ISIN {
 
 impl Display for ISIN {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ISIN({})", self.value)
+        write!(f, "{}", self.value)
     }
 }
 
