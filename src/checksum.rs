@@ -29,19 +29,19 @@
 //! variability in run time decreases also from about +/- 20% for the functional-style to negligible
 //! for the table-driven style.
 
-/// The numeric value of a char. Digit characters '0' through '9' map to values 0 through 9, and
-/// letter characters 'A' through 'Z' map to values 10 through 35.
+/// The numeric value of a u8 ASCII character. Digit characters '0' through '9' map to values 0
+/// through 9, and letter characters 'A' through 'Z' map to values 10 through 35.
 ///
 /// # Panics
 ///
 /// If anything other than an uppercase ASCII alphanumeric character is passed in, this function
 /// panics because it is only intended to be called from locations where the input has already been
 /// validated to match the character set requirements.
-fn char_value(c: char) -> u8 {
-    if ('0'..='9').contains(&c) {
-        (c as u8) - b'0'
-    } else if ('A'..='Z').contains(&c) {
-        (c as u8) - b'A' + 10
+fn char_value(c: &u8) -> u8 {
+    if (b'0'..=b'9').contains(&c) {
+        c - b'0'
+    } else if (b'A'..=b'Z').contains(&c) {
+        c - b'A' + 10
     } else {
         panic!("Non-ASCII-alphanumeric characters should be impossible here!");
     }
@@ -49,7 +49,7 @@ fn char_value(c: char) -> u8 {
 
 /// A direct translation of the formula definition, in the functional style.
 #[allow(dead_code)]
-pub fn checksum_functional(s: &str) -> u8 {
+pub fn checksum_functional(s: &[u8]) -> u8 {
     fn digits_of(x: u8) -> Vec<u8> {
         if x >= 10 {
             vec![x / 10, x % 10]
@@ -59,7 +59,7 @@ pub fn checksum_functional(s: &str) -> u8 {
     }
 
     let sum: u32 = s
-        .chars()
+        .iter()
         .map(char_value)
         .flat_map(digits_of)
         .rev()
@@ -87,38 +87,51 @@ pub fn checksum_functional(s: &str) -> u8 {
 /// The width in "steps" each char value consumes when processed. All decimal digits have width
 /// one, and all letters have width two (because their values are two digits, from 10 to 35
 /// inclusive).
+#[rustfmt::skip]
 const WIDTHS: [u8; 36] = [
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2,
 ];
 
 /// The net value added to the sum for each char value, if the step count (aka index) at the
 /// start of processing that character is odd. Odds vs. evens differ because evens go through
 /// doubling and potentially splitting into two digits before being summed to make the net value.
+#[rustfmt::skip]
 const ODDS: [u8; 36] = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 6, 7,
-    8, 9, 0, 1,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+    4, 5, 6, 7, 8, 9, 0, 1, 2, 3,
+    6, 7, 8, 9, 0, 1,
 ];
 
 /// The net value added to the sum for each char value, if the step count (aka index) at the
 /// start of processing that character is even. Odds vs. evens differ because evens go through
 /// doubling and potentially splitting into two digits before being summed to make the net value.
+#[rustfmt::skip]
 const EVENS: [u8; 36] = [
-    0, 2, 4, 6, 8, 1, 3, 5, 7, 9, 1, 3, 5, 7, 9, 2, 4, 6, 8, 0, 2, 4, 6, 8, 0, 3, 5, 7, 9, 1, 3, 5,
-    7, 9, 1, 4,
+    0, 2, 4, 6, 8,
+    1, 3, 5, 7, 9,
+    1, 3, 5, 7, 9,
+    2, 4, 6, 8, 0,
+    2, 4, 6, 8, 0,
+    3, 5, 7, 9, 1,
+    3, 5, 7, 9, 1,
+    4,
 ];
 
-/// Compute the _checksum_ for a string. No attempt is made to ensure the input string is in
+/// Compute the _checksum_ for a u8 array. No attempt is made to ensure the input string is in
 /// the ISIN payload format or length.
 ///
 /// # Panics
 ///
 /// If an illegal character (not an ASCII digit and not an
 /// ASCII uppercase letter) is encountered, the char_value() function this calls will panic.
-pub fn checksum_table(s: &str) -> u8 {
+pub fn checksum_table(s: &[u8]) -> u8 {
     let mut sum: u8 = 0;
     let mut idx: usize = 0;
-    for c in s.chars().rev() {
+    for c in s.iter().rev() {
         let v = char_value(c);
         let w = WIDTHS[v as usize];
         let x = if (idx % 2) == 0 {
@@ -149,8 +162,9 @@ mod tests {
     fn single_chars() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
             let s = c.to_string();
-            let a = checksum_functional(&s);
-            let b = checksum_table(&s);
+            let ss = s.as_bytes();
+            let a = checksum_functional(&ss);
+            let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
                 "checksum from library {} should equal that from functional style {} for \"{}\"",
@@ -166,8 +180,9 @@ mod tests {
     fn single_chars_left_of_zero() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
             let s = format!("{}0", c);
-            let a = checksum_functional(&s);
-            let b = checksum_table(&s);
+            let ss = s.as_bytes();
+            let a = checksum_functional(&ss);
+            let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
                 "checksum from library {} should equal that from functional style {} for \"{}\"",
@@ -182,8 +197,9 @@ mod tests {
     fn nine_left_of_single_chars() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
             let s = format!("9{}", c);
-            let a = checksum_functional(&s);
-            let b = checksum_table(&s);
+            let ss = s.as_bytes();
+            let a = checksum_functional(&ss);
+            let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
                 "checksum from library {} should equal that from functional style {} for \"{}\"",
@@ -195,8 +211,9 @@ mod tests {
     proptest! {
         #[test]
         fn processes_all_valid_strings(s in "[A-Z]{2}[0-9A-Z]{9}") {
-            let a = checksum_functional(&s);
-            let b = checksum_table(&s);
+            let ss = s.as_bytes();
+            let a = checksum_functional(&ss);
+            let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
                 "checksum from library {} should equal that from functional style {} for \"{}\"",
