@@ -138,7 +138,8 @@ pub fn checksum_table(s: &[u8]) -> u8 {
     for c in s.iter().rev() {
         let v = char_value(c);
         let w = WIDTHS[v as usize];
-        let x = if (idx % 2) == 0 {
+        // "idx & 0x1" Seems to save a few percent on run time vs. "idx % 2"
+        let x = if (idx & 0x1) == 0 {
             EVENS[v as usize]
         } else {
             ODDS[v as usize]
