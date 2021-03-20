@@ -13,10 +13,10 @@ fn bench_checksums(c: &mut Criterion) {
     let mut group = c.benchmark_group("Checksum");
     for p in PAYLOADS.iter() {
         group.bench_with_input(BenchmarkId::new("Functional", p), p, |b, p| {
-            b.iter(|| checksum_functional(*p))
+            b.iter(|| checksum_functional(p.as_bytes()))
         });
         group.bench_with_input(BenchmarkId::new("Table", p), p, |b, p| {
-            b.iter(|| checksum_table(*p))
+            b.iter(|| checksum_table(p.as_bytes()))
         });
     }
 }
