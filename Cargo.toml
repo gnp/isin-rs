@@ -19,3 +19,7 @@ bstr = { version = "0.2", features = ["std"] }
 [[bench]]
 name = "checksum_compare"
 harness = false
+
+[[bench]]
+name = "parse"
+harness = false
