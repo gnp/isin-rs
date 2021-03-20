@@ -143,8 +143,9 @@ pub fn checksum_table(s: &[u8]) -> u8 {
         } else {
             ODDS[v as usize]
         };
+        // Cannot trigger on input < 28 bytes long. Not performing mod every iteration seems to
+        // save a few percent on run time.
         if sum > MAX_ACCUM {
-            // Cannot trigger on input < 28 bytes long
             sum %= 10
         }
         sum += x;
