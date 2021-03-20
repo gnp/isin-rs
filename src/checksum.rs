@@ -23,11 +23,11 @@
 //! effect each character has on the checksum accumulator at that point and how it effects
 //! whether the next character is in a doubling position or not.
 //!
-//! Benchmarking shows the table-driven implementation to be around 70 to 90 times faster
-//! than the functional style (on the test system, average run time decreases from around 2.1 to 2.9
-//! us with the functional style to around 30.6 ns with the table-driven style). Input-dependent
-//! variability in run time decreases also from about +/- 20% for the functional-style to negligible
-//! for the table-driven style.
+//! Benchmarking shows the table-driven implementation to be around 100 times faster
+//! than the functional style (on the test system, average run time decreases from around 2,015 ns
+//! with the functional style to around 19 ns with the table-driven style). Input-dependent
+//! variability in run time decreases also from about +/- 14% for the functional-style to about
+//! +/- 3% for the table-driven style.
 
 /// The numeric value of a u8 ASCII character. Digit characters '0' through '9' map to values 0
 /// through 9, and letter characters 'A' through 'Z' map to values 10 through 35.
