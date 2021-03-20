@@ -121,6 +121,10 @@ const EVENS: [u8; 36] = [
     4,
 ];
 
+/// The maximum value the accumulator can have and still be able to go another iteration without
+/// overflowing. Used to determine when to reduce the accumulator with a modulus operation.
+const MAX_ACCUM: u8 = u8::MAX - 9;
+
 /// Compute the _checksum_ for a u8 array. No attempt is made to ensure the input string is in
 /// the ISIN payload format or length.
 ///
@@ -139,9 +143,14 @@ pub fn checksum_table(s: &[u8]) -> u8 {
         } else {
             ODDS[v as usize]
         };
-        sum = (sum + x) % 10;
+        if sum > MAX_ACCUM {
+            // Cannot trigger on input < 28 bytes long
+            sum %= 10
+        }
+        sum += x;
         idx += w as usize;
     }
+    sum %= 10;
 
     let diff = 10 - sum;
     if diff == 10 {
