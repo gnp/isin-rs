@@ -6,7 +6,7 @@ use isin::checksum::checksum_table;
 const PAYLOADS: [&str; 3] = [
     "AA000000000", // The least taxing input for the functional style because digit expansion is rarely needed
     "US037833100", // A typical input (this is the payload for the Apple (AAPL) commons stock ISIN)
-    "ZZZZZZZZZZZ", // The most taxing input for the functional style but digit expansion is maximized
+    "ZZZZZZZZZZZ", // The most taxing input for the functional style because digit expansion is maximized
 ];
 
 fn bench_checksums(c: &mut Criterion) {
