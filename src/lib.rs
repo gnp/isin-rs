@@ -17,7 +17,7 @@
 //! 3. A single decimal digit representing the _check digit_ computed using what the standard calls
 //! the "modulus 10 'double-add-double' check digit".
 //!
-//! Use the `ISIN::parse_loose()` or `ISIN::parse_strict()` methods to convert a string to a
+//! Use the `parse_loose()` or `parse_strict()` methods to convert a string to a
 //! validated ISIN.
 
 use std::error::Error;
