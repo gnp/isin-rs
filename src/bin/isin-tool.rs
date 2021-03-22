@@ -94,7 +94,7 @@ fn main() {
                 bad += 1;
                 fixed += 1;
                 if fix {
-                    let payload = &line.as_bytes()[0..8]; // We know it was the right length
+                    let payload = &line.as_bytes()[0..11]; // We know it was the right length
                     let payload = unsafe { payload.to_str_unchecked() }; // We know it is ASCII
 
                     // We know the Check Digit was the only problem, so we can safely unwrap()
