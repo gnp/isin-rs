@@ -8,6 +8,7 @@ edition = "2018"
 keywords = ["isin", "identifier", "finance", "equity", "stock"]
 readme = "README.md"
 repository = "https://github.com/gnp/isin-rs.git"
+include = []
 
 [dev-dependencies]
 proptest = "1.0"
