@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 //! # isin
 //!
 //! `isin` provides an `ISIN` type for working with validated International Securities
@@ -41,6 +42,8 @@ use checksum::checksum_table;
 
 pub mod error;
 pub use error::ISINError;
+
+/// Type alias for backward compatibility. Do not use in new code.
 #[deprecated(since = "0.1.8", note = "please use `ISINError` instead")]
 pub type ParseError = ISINError;
 
@@ -130,6 +133,7 @@ pub fn parse(value: &str) -> Result<ISIN, ISINError> {
     Ok(ISIN(bb))
 }
 
+/// Forwards to `parse()` for backward compatibility. Do not use in new code.
 #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
 pub fn parse_strict(value: &str) -> Result<ISIN, ISINError> {
     parse(value)
@@ -144,6 +148,7 @@ pub fn parse_loose(value: &str) -> Result<ISIN, ISINError> {
     parse(temp)
 }
 
+/// An ISIN in confirmed valid format.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
 #[repr(transparent)]
 pub struct ISIN([u8; 12]);
@@ -164,6 +169,7 @@ impl FromStr for ISIN {
 }
 
 impl ISIN {
+    /// Forwards to crate-level `parse()` for backard compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
     pub fn parse_strict<S>(value: S) -> Result<ISIN, ISINError>
     where
@@ -173,6 +179,7 @@ impl ISIN {
         crate::parse(&v)
     }
 
+    /// Forwards to crate-level `parse_loose()` for backard compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse_loose` instead")]
     pub fn parse_loose<S>(value: S) -> Result<ISIN, ISINError>
     where
