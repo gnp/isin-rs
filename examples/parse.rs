@@ -2,7 +2,7 @@ use isin;
 
 fn main() {
     let isin_string = "US0378331005";
-    match isin::parse_strict(isin_string) {
+    match isin::parse(isin_string) {
         Ok(isin) => {
             println!("Parsed ISIN: {}", isin.to_string()); // "US0378331005"
             println!("  Country code: {}", isin.country_code()); // "US"
