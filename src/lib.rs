@@ -29,7 +29,6 @@
 //! * ISIN
 //!
 
-use std::error::Error;
 use std::fmt::Formatter;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
@@ -40,112 +39,10 @@ pub mod checksum;
 
 use checksum::checksum_table;
 
-#[non_exhaustive]
-#[derive(Clone, PartialEq, Eq)]
-pub enum ParseError {
-    /// The input length is not exactly 12 bytes.
-    InvalidLength { was: usize },
-    /// The input country code is not two uppercase ASCII alphabetic characters.
-    InvalidCountryCode { was: [u8; 2] },
-    /// The input security id is not nine uppercase ASCII alphanumeric characters.
-    InvalidSecurityId { was: [u8; 9] },
-    /// The input check digit is not a single ASCII decimal digit character.
-    InvalidCheckDigit { was: u8 },
-    /// The input check digit has in a valid format, but has an incorrect value.
-    IncorrectCheckDigit { was: u8, expected: u8 },
-}
-
-impl Debug for ParseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParseError::InvalidLength { was } => {
-                write!(f, "InvalidLength {{ was: {:?} }}", was)
-            }
-            ParseError::InvalidCountryCode { was } => match std::str::from_utf8(was) {
-                Ok(s) => {
-                    write!(f, "InvalidCountryCode {{ was: {:?} }}", s)
-                }
-                Err(_) => {
-                    write!(f, "InvalidCountryCode {{ was: (invalid UTF-8) {:?} }}", was)
-                }
-            },
-            ParseError::InvalidSecurityId { was } => match std::str::from_utf8(was) {
-                Ok(s) => {
-                    write!(f, "InvalidSecurityId {{ was: {:?} }}", s)
-                }
-                Err(_) => {
-                    write!(f, "InvalidSecurityId {{ was: (invalid UTF-8) {:?} }}", was)
-                }
-            },
-            ParseError::InvalidCheckDigit { was } => {
-                write!(f, "InvalidCheckDigit {{ was: {:?} }}", char::from(*was))
-            }
-            ParseError::IncorrectCheckDigit { was, expected } => {
-                write!(
-                    f,
-                    "IncorrectCheckDigit {{ was: {:?}, expected: {:?} }}",
-                    char::from(*was),
-                    char::from(*expected)
-                )
-            }
-        }
-    }
-}
-
-impl Display for ParseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParseError::InvalidLength { was } => {
-                write!(f, "invalid length {} bytes when expecting 12", was)
-            }
-            ParseError::InvalidCountryCode { was } => match std::str::from_utf8(was) {
-                Ok(s) => {
-                    write!(
-                        f,
-                        "country code {:?} is not two uppercase ASCII alphabetic characters",
-                        s
-                    )
-                }
-                Err(_) => {
-                    write!(f,
-                    "country code (invalid UTF-8) {:?} is not two uppercase ASCII alphabetic characters",
-                    was)
-                }
-            },
-            ParseError::InvalidSecurityId { was } => match std::str::from_utf8(was) {
-                Ok(s) => {
-                    write!(
-                        f,
-                        "security id {:?} is not nine uppercase ASCII alphanumeric characters",
-                        s
-                    )
-                }
-                Err(_) => {
-                    write!(f,
-                "security id (invalid UTF-8) {:?} is not nine uppercase ASCII alphanumeric characters",
-                    was)
-                }
-            },
-            ParseError::InvalidCheckDigit { was } => {
-                write!(
-                    f,
-                    "check digit {:?} is not one ASCII decimal digit",
-                    *was as char
-                )
-            }
-            ParseError::IncorrectCheckDigit { was, expected } => {
-                write!(
-                    f,
-                    "incorrect check digit {:?} when expecting {:?}",
-                    char::from(*was),
-                    char::from(*expected)
-                )
-            }
-        }
-    }
-}
-
-impl Error for ParseError {}
+pub mod error;
+pub use error::ISINError;
+#[deprecated(since = "0.1.8", note = "please use `ISINError` instead")]
+pub type ParseError = ISINError;
 
 /// Compute the _check digit_ for an array of u8. No attempt is made to ensure the input string
 /// is in the ISIN payload format or length. If an illegal character (not an ASCII digit and not
@@ -155,31 +52,31 @@ pub fn compute_check_digit(s: &[u8]) -> u8 {
     b'0' + sum
 }
 
-fn validate_country_code_format(cc: &[u8]) -> Result<(), ParseError> {
+fn validate_country_code_format(cc: &[u8]) -> Result<(), ISINError> {
     for b in cc {
         if !(b.is_ascii_alphabetic() && b.is_ascii_uppercase()) {
             let mut cc_copy: [u8; 2] = [0; 2];
             cc_copy.copy_from_slice(cc);
-            return Err(ParseError::InvalidCountryCode { was: cc_copy });
+            return Err(ISINError::InvalidCountryCode { was: cc_copy });
         }
     }
     Ok(())
 }
 
-fn validate_security_id_format(si: &[u8]) -> Result<(), ParseError> {
+fn validate_security_id_format(si: &[u8]) -> Result<(), ISINError> {
     for b in si {
         if !(b.is_ascii_digit() || (b.is_ascii_alphabetic() && b.is_ascii_uppercase())) {
             let mut si_copy: [u8; 9] = [0; 9];
             si_copy.copy_from_slice(si);
-            return Err(ParseError::InvalidSecurityId { was: si_copy });
+            return Err(ISINError::InvalidSecurityId { was: si_copy });
         }
     }
     Ok(())
 }
 
-fn validate_check_digit_format(cd: u8) -> Result<(), ParseError> {
+fn validate_check_digit_format(cd: u8) -> Result<(), ISINError> {
     if !cd.is_ascii_digit() {
-        Err(ParseError::InvalidCheckDigit { was: cd })
+        Err(ISINError::InvalidCheckDigit { was: cd })
     } else {
         Ok(())
     }
@@ -188,11 +85,11 @@ fn validate_check_digit_format(cd: u8) -> Result<(), ParseError> {
 /// Parse a string to a valid ISIN or an error message, requiring the string to already be only
 /// uppercase alphanumerics with no leading or trailing whitespace in addition to being the
 /// right length and format.
-pub fn parse(value: &str) -> Result<ISIN, ParseError> {
+pub fn parse(value: &str) -> Result<ISIN, ISINError> {
     let v: String = value.into();
 
     if v.len() != 12 {
-        return Err(ParseError::InvalidLength { was: v.len() });
+        return Err(ISINError::InvalidLength { was: v.len() });
     }
 
     // We make the preliminary assumption that the string is pure ASCII, so we work with the
@@ -221,7 +118,7 @@ pub fn parse(value: &str) -> Result<ISIN, ParseError> {
 
     let incorrect_check_digit = cd != computed_check_digit;
     if incorrect_check_digit {
-        return Err(ParseError::IncorrectCheckDigit {
+        return Err(ISINError::IncorrectCheckDigit {
             was: cd,
             expected: computed_check_digit,
         });
@@ -234,14 +131,14 @@ pub fn parse(value: &str) -> Result<ISIN, ParseError> {
 }
 
 #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
-pub fn parse_strict(value: &str) -> Result<ISIN, ParseError> {
+pub fn parse_strict(value: &str) -> Result<ISIN, ISINError> {
     parse(value)
 }
 
 /// Parse a string to a valid ISIN or an error, allowing the string to contain leading
 /// or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
 /// and format.
-pub fn parse_loose(value: &str) -> Result<ISIN, ParseError> {
+pub fn parse_loose(value: &str) -> Result<ISIN, ISINError> {
     let uc = value.to_ascii_uppercase();
     let temp = uc.trim();
     parse(temp)
@@ -259,7 +156,7 @@ impl Display for ISIN {
 }
 
 impl FromStr for ISIN {
-    type Err = ParseError;
+    type Err = ISINError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_loose(s)
@@ -268,7 +165,7 @@ impl FromStr for ISIN {
 
 impl ISIN {
     #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
-    pub fn parse_strict<S>(value: S) -> Result<ISIN, ParseError>
+    pub fn parse_strict<S>(value: S) -> Result<ISIN, ISINError>
     where
         S: Into<String>,
     {
@@ -277,7 +174,7 @@ impl ISIN {
     }
 
     #[deprecated(since = "0.1.7", note = "please use `isin::parse_loose` instead")]
-    pub fn parse_loose<S>(value: S) -> Result<ISIN, ParseError>
+    pub fn parse_loose<S>(value: S) -> Result<ISIN, ISINError>
     where
         S: Into<String>,
     {
@@ -358,7 +255,7 @@ mod tests {
     #[test]
     fn reject_lowercase_country_code_if_strict() {
         match parse("us0378331005") {
-            Err(ParseError::InvalidCountryCode { was: _ }) => {} // Ok
+            Err(ISINError::InvalidCountryCode { was: _ }) => {} // Ok
             Err(err) => {
                 assert!(
                     false,
@@ -379,7 +276,7 @@ mod tests {
     #[test]
     fn reject_lowercase_security_id_if_strict() {
         match parse("US09739d1000") {
-            Err(ParseError::InvalidSecurityId { was: _ }) => {} // Ok
+            Err(ISINError::InvalidSecurityId { was: _ }) => {} // Ok
             Err(err) => {
                 assert!(
                     false,
