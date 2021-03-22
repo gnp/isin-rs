@@ -3,17 +3,18 @@
 //!
 //! `isin` provides an `ISIN` type for working with validated International Securities
 //! Identification Numbers (ISINs) as defined in [ISO 6166:2021 Financial services — International securities
-//! identification number (ISIN)](https://www.iso.org/standard/78502.html).
+//! identification number (ISIN)](https://www.iso.org/standard/78502.html) ("The Standard").
 //!
 //! [The Association of National Numbering Agencies (ANNA)](https://www.anna-web.org/) has [a page
 //! describing ISO 6166](https://www.anna-web.org/standards/isin-iso-6166/).
 //!
 //! An ISIN is comprised of 12 ASCII characters with the following parts, in order:
 //!
-//! 1. A two-letter [ISO 3166]() _Country Code_ in uppercase, designating the issuer's country
+//! 1. A two-letter _Prefix_ in uppercase, designating the issuer's country
 //! of registration or legal domicile, or for OTC derivatives the special code `EZ`. Additional
-//! codes may be allocated by subsequent revisions to the standard.
-//! 2. A nine-character uppercase alphanumeric _Security Identifier_ assigned by the corresponding
+//! codes may be allocated by subsequent revisions to The Standard. Country codes follow the
+//! [ISO 3166](https://www.iso.org/iso-3166-country-codes.html) standard.
+//! 2. A nine-character uppercase alphanumeric _Basic Code_ assigned by the corresponding
 //! National Numbering Agency, zero-padded on the left if the underlying code is shorter than nine
 //! characters.
 //! 3. A single decimal digit representing the _Check Digit_ computed using what the standard calls
@@ -55,23 +56,23 @@ pub fn compute_check_digit(s: &[u8]) -> u8 {
     b'0' + sum
 }
 
-fn validate_country_code_format(cc: &[u8]) -> Result<(), ISINError> {
+fn validate_prefix_format(cc: &[u8]) -> Result<(), ISINError> {
     for b in cc {
         if !(b.is_ascii_alphabetic() && b.is_ascii_uppercase()) {
             let mut cc_copy: [u8; 2] = [0; 2];
             cc_copy.copy_from_slice(cc);
-            return Err(ISINError::InvalidCountryCode { was: cc_copy });
+            return Err(ISINError::InvalidPrefix { was: cc_copy });
         }
     }
     Ok(())
 }
 
-fn validate_security_id_format(si: &[u8]) -> Result<(), ISINError> {
+fn validate_basic_code_format(si: &[u8]) -> Result<(), ISINError> {
     for b in si {
         if !(b.is_ascii_digit() || (b.is_ascii_alphabetic() && b.is_ascii_uppercase())) {
             let mut si_copy: [u8; 9] = [0; 9];
             si_copy.copy_from_slice(si);
-            return Err(ISINError::InvalidSecurityId { was: si_copy });
+            return Err(ISINError::InvalidBasicCode { was: si_copy });
         }
     }
     Ok(())
@@ -104,10 +105,10 @@ pub fn parse(value: &str) -> Result<ISIN, ISINError> {
     // We slice out the three fields and validate their formats.
 
     let cc: &[u8] = &b[0..2];
-    validate_country_code_format(cc)?;
+    validate_prefix_format(cc)?;
 
     let si: &[u8] = &b[2..11];
-    validate_security_id_format(si)?;
+    validate_basic_code_format(si)?;
 
     let cd = b[11];
     validate_check_digit_format(cd)?;
@@ -169,7 +170,7 @@ impl FromStr for ISIN {
 }
 
 impl ISIN {
-    /// Forwards to crate-level `parse()` for backard compatibility. Do not use in new code.
+    /// Forwards to crate-level `parse()` for backward compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
     pub fn parse_strict<S>(value: S) -> Result<ISIN, ISINError>
     where
@@ -179,7 +180,7 @@ impl ISIN {
         crate::parse(&v)
     }
 
-    /// Forwards to crate-level `parse_loose()` for backard compatibility. Do not use in new code.
+    /// Forwards to crate-level `parse_loose()` for backward compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse_loose` instead")]
     pub fn parse_loose<S>(value: S) -> Result<ISIN, ISINError>
     where
@@ -195,28 +196,34 @@ impl ISIN {
         unsafe { self.0[..].to_str_unchecked() } // This is safe because we know it is ASCII
     }
 
-    /// Return just the _country code_ portion of the ISIN.
-    pub fn country_code(&self) -> &str {
+    /// Return just the _Prefix_ portion of the ISIN.
+    pub fn prefix(&self) -> &str {
         unsafe { self.0[0..2].to_str_unchecked() } // This is safe because we know it is ASCII
     }
 
-    /// Return just the _security id_ portion of the ISIN.
-    pub fn security_id(&self) -> &str {
+    /// Return just the _Prefix_ portion of the ISIN.
+    #[deprecated(since = "0.1.8", note = "please use `prefix` instead")]
+    pub fn country_code(&self) -> &str {
+        self.prefix()
+    }
+
+    /// Return just the _Basic Code_ portion of the ISIN.
+    pub fn basic_code(&self) -> &str {
         unsafe { self.0[2..11].to_str_unchecked() } // This is safe because we know it is ASCII
     }
 
-    /// Return just the _security id_ portion of the ISIN.
-    #[deprecated(since = "0.1.8", note = "please use `security_id` instead")]
+    /// Return just the _Basic Code_ portion of the ISIN.
+    #[deprecated(since = "0.1.8", note = "please use `basic_code` instead")]
     pub fn security_identifier(&self) -> &str {
-        self.security_id()
+        self.basic_code()
     }
 
-    /// Return the &ldquo;payload&rdquo; &mdash; everything except the check digit.
+    /// Return the _Payload_ &mdash; everything except the _Check Digit_.
     pub fn payload(&self) -> &str {
         unsafe { self.0[0..11].to_str_unchecked() } // This is safe because we know it is ASCII
     }
 
-    /// Return just the _check digit_ portion of the ISIN.
+    /// Return just the _Check Digit_ portion of the ISIN.
     pub fn check_digit(&self) -> char {
         self.0[11] as char
     }
@@ -232,8 +239,8 @@ mod tests {
         match parse("US0378331005") {
             Ok(isin) => {
                 assert_eq!(isin.to_string(), "US0378331005");
-                assert_eq!(isin.country_code(), "US");
-                assert_eq!(isin.security_id(), "037833100");
+                assert_eq!(isin.prefix(), "US");
+                assert_eq!(isin.basic_code(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
             Err(err) => assert!(false, "Did not expect parsing to fail: {}", err),
@@ -245,8 +252,8 @@ mod tests {
         match parse_loose("\tus0378331005    ") {
             Ok(isin) => {
                 assert_eq!(isin.to_string(), "US0378331005");
-                assert_eq!(isin.country_code(), "US");
-                assert_eq!(isin.security_id(), "037833100");
+                assert_eq!(isin.prefix(), "US");
+                assert_eq!(isin.basic_code(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
             Err(err) => assert!(false, "Did not expect parsing to fail: {}", err),
@@ -260,20 +267,20 @@ mod tests {
     }
 
     #[test]
-    fn reject_lowercase_country_code_if_strict() {
+    fn reject_lowercase_prefix_if_strict() {
         match parse("us0378331005") {
-            Err(ISINError::InvalidCountryCode { was: _ }) => {} // Ok
+            Err(ISINError::InvalidPrefix { was: _ }) => {} // Ok
             Err(err) => {
                 assert!(
                     false,
-                    "Expected Err(InvalidCountryCode {{ ... }}), but got: Err({:?})",
+                    "Expected Err(InvalidPrefix {{ ... }}), but got: Err({:?})",
                     err
                 )
             }
             Ok(isin) => {
                 assert!(
                     false,
-                    "Expected Err(InvalidCountryCode {{ ... }}), but got: Ok({:?})",
+                    "Expected Err(InvalidPrefix {{ ... }}), but got: Ok({:?})",
                     isin
                 )
             }
@@ -281,20 +288,20 @@ mod tests {
     }
 
     #[test]
-    fn reject_lowercase_security_id_if_strict() {
+    fn reject_lowercase_basic_code_if_strict() {
         match parse("US09739d1000") {
-            Err(ISINError::InvalidSecurityId { was: _ }) => {} // Ok
+            Err(ISINError::InvalidBasicCode { was: _ }) => {} // Ok
             Err(err) => {
                 assert!(
                     false,
-                    "Expected Err(InvalidSecurityId {{ ... }}), but got: Err({:?})",
+                    "Expected Err(InvalidBasicCode {{ ... }}), but got: Err({:?})",
                     err
                 )
             }
             Ok(isin) => {
                 assert!(
                     false,
-                    "Expected Err(InvalidSecurityId {{ ... }}), but got: Ok({:?})",
+                    "Expected Err(InvalidBasicCode {{ ... }}), but got: Ok({:?})",
                     isin
                 )
             }

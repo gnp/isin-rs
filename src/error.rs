@@ -16,22 +16,22 @@ pub enum ISINError {
         /// The length we found
         was: usize,
     },
-    /// The input country code is not two uppercase ASCII alphabetic characters.
-    InvalidCountryCode {
-        /// The _Country Code_ we found
+    /// The input _Prefix_ is not two uppercase ASCII alphabetic characters.
+    InvalidPrefix {
+        /// The _Prefix_ we found
         was: [u8; 2],
     },
-    /// The input security id is not nine uppercase ASCII alphanumeric characters.
-    InvalidSecurityId {
-        /// The _Security Identifier_ we found
+    /// The input _Basic Code_ is not nine uppercase ASCII alphanumeric characters.
+    InvalidBasicCode {
+        /// The _Basic Code_ we found
         was: [u8; 9],
     },
-    /// The input check digit is not a single ASCII decimal digit character.
+    /// The input _Check Digit_ is not a single ASCII decimal digit character.
     InvalidCheckDigit {
         /// The _Check Digit_ we found
         was: u8,
     },
-    /// The input check digit has in a valid format, but has an incorrect value.
+    /// The input _Check Digit_ has in a valid format, but has an incorrect value.
     IncorrectCheckDigit {
         /// The _Check Digit_ we found
         was: u8,
@@ -46,20 +46,20 @@ impl Debug for ISINError {
             ISINError::InvalidLength { was } => {
                 write!(f, "InvalidLength {{ was: {:?} }}", was)
             }
-            ISINError::InvalidCountryCode { was } => match std::str::from_utf8(was) {
+            ISINError::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
-                    write!(f, "InvalidCountryCode {{ was: {:?} }}", s)
+                    write!(f, "InvalidPrefix {{ was: {:?} }}", s)
                 }
                 Err(_) => {
-                    write!(f, "InvalidCountryCode {{ was: (invalid UTF-8) {:?} }}", was)
+                    write!(f, "InvalidPrefix {{ was: (invalid UTF-8) {:?} }}", was)
                 }
             },
-            ISINError::InvalidSecurityId { was } => match std::str::from_utf8(was) {
+            ISINError::InvalidBasicCode { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
-                    write!(f, "InvalidSecurityId {{ was: {:?} }}", s)
+                    write!(f, "InvalidBasicCode {{ was: {:?} }}", s)
                 }
                 Err(_) => {
-                    write!(f, "InvalidSecurityId {{ was: (invalid UTF-8) {:?} }}", was)
+                    write!(f, "InvalidBasicCode {{ was: (invalid UTF-8) {:?} }}", was)
                 }
             },
             ISINError::InvalidCheckDigit { was } => {
@@ -83,31 +83,31 @@ impl Display for ISINError {
             ISINError::InvalidLength { was } => {
                 write!(f, "invalid length {} bytes when expecting 12", was)
             }
-            ISINError::InvalidCountryCode { was } => match std::str::from_utf8(was) {
+            ISINError::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
                     write!(
                         f,
-                        "country code {:?} is not two uppercase ASCII alphabetic characters",
+                        "prefix {:?} is not two uppercase ASCII alphabetic characters",
                         s
                     )
                 }
                 Err(_) => {
                     write!(f,
-                    "country code (invalid UTF-8) {:?} is not two uppercase ASCII alphabetic characters",
+                    "prefix (invalid UTF-8) {:?} is not two uppercase ASCII alphabetic characters",
                     was)
                 }
             },
-            ISINError::InvalidSecurityId { was } => match std::str::from_utf8(was) {
+            ISINError::InvalidBasicCode { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
                     write!(
                         f,
-                        "security id {:?} is not nine uppercase ASCII alphanumeric characters",
+                        "basic code {:?} is not nine uppercase ASCII alphanumeric characters",
                         s
                     )
                 }
                 Err(_) => {
                     write!(f,
-                "security id (invalid UTF-8) {:?} is not nine uppercase ASCII alphanumeric characters",
+                "basic code (invalid UTF-8) {:?} is not nine uppercase ASCII alphanumeric characters",
                     was)
                 }
             },
