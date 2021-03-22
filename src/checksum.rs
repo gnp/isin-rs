@@ -122,7 +122,9 @@ const EVENS: [u8; 36] = [
 ];
 
 /// The maximum value the accumulator can have and still be able to go another iteration without
-/// overflowing. Used to determine when to reduce the accumulator with a modulus operation.
+/// overflowing. Used to determine when to reduce the accumulator with a modulus operation. The max
+/// addition of any iteration is 9 because we have pre-computed net values that are already mod 10
+/// themselves.
 const MAX_ACCUM: u8 = u8::MAX - 9;
 
 /// Compute the _checksum_ for a u8 array. No attempt is made to ensure the input string is in
@@ -144,8 +146,8 @@ pub fn checksum_table(s: &[u8]) -> u8 {
         } else {
             ODDS[v as usize]
         };
-        // Cannot trigger on input < 28 bytes long. Not performing mod every iteration seems to
-        // save a few percent on run time.
+        // Cannot trigger on input < 28 bytes long because floor((255 - 9)/9) = 27. Not performing
+        // mod every iteration seems to save a few percent on run time.
         if sum > MAX_ACCUM {
             sum %= 10
         }
@@ -168,7 +170,8 @@ mod tests {
     use proptest::prelude::*;
 
     // Ensure the table-driven method gets the same answer as the functional style implementation
-    // for each allowed symbol by itself, which exercises the EVEN table, as counted from the right.
+    // for each allowed symbol by itself, which exercises the EVEN table, as counted from the
+    // *right*.
     #[test]
     fn single_chars() {
         for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
@@ -196,7 +199,7 @@ mod tests {
             let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
-                "checksum from library {} should equal that from functional style {} for \"{}\"",
+                "checksum from table style {} should equal that from functional style {} for \"{}\"",
                 b, a, s
             );
         }
@@ -213,7 +216,7 @@ mod tests {
             let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
-                "checksum from library {} should equal that from functional style {} for \"{}\"",
+                "checksum from table style {} should equal that from functional style {} for \"{}\"",
                 b, a, s
             );
         }
@@ -227,7 +230,7 @@ mod tests {
             let b = checksum_table(&ss);
             assert_eq!(
                 a, b,
-                "checksum from library {} should equal that from functional style {} for \"{}\"",
+                "checksum from table style {} should equal that from functional style {} for \"{}\"",
                 b, a, s
             );
         }
