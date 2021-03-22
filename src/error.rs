@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 //! # isin::error
 //!
 //! Error type for ISIN parsing and building.
@@ -6,19 +7,37 @@ use std::error::Error;
 use std::fmt::Formatter;
 use std::fmt::{Debug, Display};
 
+/// All the ways parsing or building could fail.
 #[non_exhaustive]
 #[derive(Clone, PartialEq, Eq)]
 pub enum ISINError {
     /// The input length is not exactly 12 bytes.
-    InvalidLength { was: usize },
+    InvalidLength {
+        /// The length we found
+        was: usize,
+    },
     /// The input country code is not two uppercase ASCII alphabetic characters.
-    InvalidCountryCode { was: [u8; 2] },
+    InvalidCountryCode {
+        /// The _Country Code_ we found
+        was: [u8; 2],
+    },
     /// The input security id is not nine uppercase ASCII alphanumeric characters.
-    InvalidSecurityId { was: [u8; 9] },
+    InvalidSecurityId {
+        /// The _Security Identifier_ we found
+        was: [u8; 9],
+    },
     /// The input check digit is not a single ASCII decimal digit character.
-    InvalidCheckDigit { was: u8 },
+    InvalidCheckDigit {
+        /// The _Check Digit_ we found
+        was: u8,
+    },
     /// The input check digit has in a valid format, but has an incorrect value.
-    IncorrectCheckDigit { was: u8, expected: u8 },
+    IncorrectCheckDigit {
+        /// The _Check Digit_ we found
+        was: u8,
+        /// The _Check Digit_ we expected
+        expected: u8,
+    },
 }
 
 impl Debug for ISINError {
