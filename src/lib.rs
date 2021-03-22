@@ -17,8 +17,8 @@
 //! 3. A single decimal digit representing the _check digit_ computed using what the standard calls
 //! the "modulus 10 'double-add-double' check digit".
 //!
-//! Use the `parse_loose()` or `parse_strict()` methods to convert a string to a
-//! validated ISIN.
+//! Use the `parse()` or `parse_loose()` methods on the ISIN type to convert a string to a validated
+//! ISIN.
 
 use std::error::Error;
 use std::fmt::Formatter;
@@ -179,7 +179,7 @@ fn validate_check_digit_format(cd: u8) -> Result<(), ParseError> {
 /// Parse a string to a valid ISIN or an error message, requiring the string to already be only
 /// uppercase alphanumerics with no leading or trailing whitespace in addition to being the
 /// right length and format.
-pub fn parse_strict(value: &str) -> Result<ISIN, ParseError> {
+pub fn parse(value: &str) -> Result<ISIN, ParseError> {
     let v: String = value.into();
 
     if v.len() != 12 {
@@ -218,19 +218,24 @@ pub fn parse_strict(value: &str) -> Result<ISIN, ParseError> {
         });
     }
 
-    let mut b = [0u8; 12];
-    b.copy_from_slice(v.as_bytes());
+    let mut bb = [0u8; 12];
+    bb.copy_from_slice(b);
 
-    Ok(ISIN(b))
+    Ok(ISIN(bb))
 }
 
-/// Parse a string to a valid ISIN or an error message, allowing the string to contain leading
+#[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
+pub fn parse_strict(value: &str) -> Result<ISIN, ParseError> {
+    parse(value)
+}
+
+/// Parse a string to a valid ISIN or an error, allowing the string to contain leading
 /// or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
 /// and format.
 pub fn parse_loose(value: &str) -> Result<ISIN, ParseError> {
     let uc = value.to_ascii_uppercase();
     let temp = uc.trim();
-    parse_strict(temp)
+    parse(temp)
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
@@ -253,13 +258,13 @@ impl FromStr for ISIN {
 }
 
 impl ISIN {
-    #[deprecated(since = "0.1.7", note = "please use `isin::parse_strict` instead")]
+    #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
     pub fn parse_strict<S>(value: S) -> Result<ISIN, ParseError>
     where
         S: Into<String>,
     {
         let v: String = value.into();
-        crate::parse_strict(&v)
+        crate::parse(&v)
     }
 
     #[deprecated(since = "0.1.7", note = "please use `isin::parse_loose` instead")]
@@ -305,7 +310,7 @@ mod tests {
 
     #[test]
     fn parse_isin_for_apple_strict() {
-        match parse_strict("US0378331005") {
+        match parse("US0378331005") {
             Ok(isin) => {
                 assert_eq!(isin.to_string(), "US0378331005");
                 assert_eq!(isin.country_code(), "US");
@@ -331,7 +336,7 @@ mod tests {
 
     #[test]
     fn reject_empty_string() {
-        let res = parse_strict("");
+        let res = parse("");
         assert!(res.is_err());
     }
 
@@ -349,64 +354,64 @@ mod tests {
 
     #[test]
     fn parse_isin_with_0_check_digit() {
-        parse_strict("US09739D1000").unwrap(); // BCC aka Boise Cascade
+        parse("US09739D1000").unwrap(); // BCC aka Boise Cascade
     }
 
     #[test]
     fn parse_isin_with_1_check_digit() {
-        parse_strict("US4581401001").unwrap(); // INTC aka Intel
+        parse("US4581401001").unwrap(); // INTC aka Intel
     }
 
     #[test]
     fn parse_isin_with_2_check_digit() {
-        parse_strict("US98421M1062").unwrap(); // XRX aka Xerox
+        parse("US98421M1062").unwrap(); // XRX aka Xerox
     }
 
     #[test]
     fn parse_isin_with_3_check_digit() {
-        parse_strict("US02376R1023").unwrap(); // AAL aka American Airlines
+        parse("US02376R1023").unwrap(); // AAL aka American Airlines
     }
 
     #[test]
     fn parse_isin_with_4_check_digit() {
-        parse_strict("US9216591084").unwrap(); // VNDA aka Vanda Pharmaceuticals
+        parse("US9216591084").unwrap(); // VNDA aka Vanda Pharmaceuticals
     }
 
     #[test]
     fn parse_isin_with_5_check_digit() {
-        parse_strict("US0207721095").unwrap(); // APT aka AlphaProTec
+        parse("US0207721095").unwrap(); // APT aka AlphaProTec
     }
 
     #[test]
     fn parse_isin_with_6_check_digit() {
-        parse_strict("US71363P1066").unwrap(); // PRDO aka Perdoceo Education
+        parse("US71363P1066").unwrap(); // PRDO aka Perdoceo Education
     }
 
     #[test]
     fn parse_isin_with_7_check_digit() {
-        parse_strict("US5915202007").unwrap(); // MEI aka Methode Electronics
+        parse("US5915202007").unwrap(); // MEI aka Methode Electronics
     }
 
     #[test]
     fn parse_isin_with_8_check_digit() {
-        parse_strict("US4570301048").unwrap(); // IMKTA aka Ingles Markets
+        parse("US4570301048").unwrap(); // IMKTA aka Ingles Markets
     }
 
     #[test]
     fn parse_isin_with_9_check_digit() {
-        parse_strict("US8684591089").unwrap(); // SUPN aka Supernus Pharmaceuticals
+        parse("US8684591089").unwrap(); // SUPN aka Supernus Pharmaceuticals
     }
 
     #[test]
     fn test_unicode_gibberish() {
-        assert_eq!(true, parse_strict("𑴈𐎟 0 A").is_err());
+        assert_eq!(true, parse("𑴈𐎟 0 A").is_err());
     }
 
     proptest! {
         #[test]
         #[allow(unused_must_use)]
         fn doesnt_crash(s in "\\PC*") {
-            parse_strict(&s);
+            parse(&s);
         }
     }
 }
