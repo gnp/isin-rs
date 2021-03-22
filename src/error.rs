@@ -16,6 +16,21 @@ pub enum ISINError {
         /// The length we found
         was: usize,
     },
+    /// The _Payload_ length is not exactly 11 bytes (checked when building).
+    InvalidPayloadLength {
+        /// The length we found
+        was: usize,
+    },
+    /// The _Prefix_ length is not exactly 2 bytes (checked when building).
+    InvalidPrefixLength {
+        /// The length we found
+        was: usize,
+    },
+    /// The _Basic Code_ length is not exactly 9 bytes (checked when building).
+    InvalidBasicCodeLength {
+        /// The length we found
+        was: usize,
+    },
     /// The input _Prefix_ is not two uppercase ASCII alphabetic characters.
     InvalidPrefix {
         /// The _Prefix_ we found
@@ -45,6 +60,15 @@ impl Debug for ISINError {
         match self {
             ISINError::InvalidLength { was } => {
                 write!(f, "InvalidLength {{ was: {:?} }}", was)
+            }
+            ISINError::InvalidPayloadLength { was } => {
+                write!(f, "InvalidPayloadLength {{ was: {:?} }}", was)
+            }
+            ISINError::InvalidPrefixLength { was } => {
+                write!(f, "InvalidPrefixLength {{ was: {:?} }}", was)
+            }
+            ISINError::InvalidBasicCodeLength { was } => {
+                write!(f, "InvalidBasicCodeLength {{ was: {:?} }}", was)
             }
             ISINError::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
@@ -82,6 +106,19 @@ impl Display for ISINError {
         match self {
             ISINError::InvalidLength { was } => {
                 write!(f, "invalid length {} bytes when expecting 12", was)
+            }
+            ISINError::InvalidPayloadLength { was } => {
+                write!(f, "invalid Payload length {} bytes when expecting 11", was)
+            }
+            ISINError::InvalidPrefixLength { was } => {
+                write!(f, "invalid Prefix length {} bytes when expecting 2", was)
+            }
+            ISINError::InvalidBasicCodeLength { was } => {
+                write!(
+                    f,
+                    "invalid Basic Code length {} bytes when expecting 9",
+                    was
+                )
             }
             ISINError::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {

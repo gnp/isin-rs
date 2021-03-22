@@ -38,19 +38,101 @@
 //! directory of this crate, you can run:
 //!
 //! ```sh
-//! gzcat isins.txt.gz| cargo run isin-tool
+//! gzcat isins.txt.gz | cargo run isin-tool
 //! ```
 //!
-//! And, if all goes well, there will be no panic (and, no output either, currently).
+//! And, output will be something like this:
+//!
+//! ```text
+//! Read 1591249 values; 1591249 were valid ISINs and 0 were not.
+//! ```
+//!
+//! If no bad values were found, the tool will exit with zero status, else non-zero.
+//!
+//! ## Fix mode
+//!
+//! If you run with argument `--fix`, then any input ISINs that are only wrong due to incorrect
+//! _Check Digit_ will be fixed. In this mode, every good and every fixable input ISIN is printed
+//! to standard output.
 
+use std::env;
 use std::io;
 use std::io::prelude::*;
 
+use bstr::ByteSlice;
+
 #[doc(hidden)]
 fn main() {
+    let mut fix: bool = false;
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 2 && args[1] == "--fix" {
+        fix = true;
+    } else if args.len() != 1 {
+        eprintln!("usage: isin-tool [--fix]");
+        std::process::exit(1);
+    }
+
+    let mut good = 0u64;
+    let mut bad = 0u64;
+    let mut fixed = 0u64;
+
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();
-        isin::parse(&line).unwrap();
+        match isin::parse(&line) {
+            Ok(isin) => {
+                good += 1;
+                if fix {
+                    println!("{}", isin);
+                }
+            }
+            Err(isin::ISINError::IncorrectCheckDigit {
+                was: _,
+                expected: _,
+            }) => {
+                bad += 1;
+                fixed += 1;
+                if fix {
+                    let payload = &line.as_bytes()[0..8]; // We know it was the right length
+                    let payload = unsafe { payload.to_str_unchecked() }; // We know it is ASCII
+
+                    // We know the Check Digit was the only problem, so we can safely unwrap()
+                    let isin = isin::build_from_payload(payload).unwrap();
+                    println!("{}", isin);
+                }
+            }
+            Err(err) => {
+                eprintln!("Input: {}; Error: {}", line, err);
+                bad += 1;
+            }
+        }
+    }
+
+    if fix {
+        eprintln!(
+            "Read {} values; {} were valid ISINs and {} were not. Fixed {}; Omitted {}.",
+            good + bad,
+            good,
+            bad,
+            fixed,
+            bad - fixed
+        );
+
+        if bad > fixed {
+            std::process::exit(1);
+        } else {
+            std::process::exit(0);
+        }
+    } else {
+        eprintln!(
+            "Read {} values; {} were valid ISINs and {} were not.",
+            good + bad,
+            good,
+            bad
+        );
+
+        let result = if bad == 0 { 0 } else { 1 };
+        std::process::exit(result);
     }
 }

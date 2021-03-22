@@ -149,6 +149,94 @@ pub fn parse_loose(value: &str) -> Result<ISIN, ISINError> {
     parse(temp)
 }
 
+/// Build an ISIN from a _Payload_ (an already-concatenated _Prefix_ and _Basic Code_). The
+/// _Check Digit is automatically computed.
+pub fn build_from_payload(payload: &str) -> Result<ISIN, ISINError> {
+    if payload.len() != 11 {
+        return Err(ISINError::InvalidPayloadLength { was: payload.len() });
+    }
+    let b = &payload.as_bytes()[0..11];
+
+    let prefix = &b[0..2];
+    validate_prefix_format(prefix)?;
+
+    let basic_code = &b[2..11];
+    validate_basic_code_format(basic_code)?;
+
+    let mut bb = [0u8; 12];
+
+    bb[0..11].copy_from_slice(b);
+    bb[11] = compute_check_digit(b);
+
+    Ok(ISIN(bb))
+}
+
+/// Build an ISIN from its parts: an _Prefix_ and an _Basic Code_. The _Check Digit_ is
+/// automatically computed.
+pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, ISINError> {
+    if prefix.len() != 2 {
+        return Err(ISINError::InvalidPrefixLength { was: prefix.len() });
+    }
+    let prefix: &[u8] = &prefix.as_bytes()[0..2];
+    validate_prefix_format(prefix)?;
+
+    if basic_code.len() != 9 {
+        return Err(ISINError::InvalidBasicCodeLength {
+            was: basic_code.len(),
+        });
+    }
+    let basic_code: &[u8] = &basic_code.as_bytes()[0..9];
+    validate_basic_code_format(basic_code)?;
+
+    let mut bb = [0u8; 12];
+
+    bb[0..2].copy_from_slice(prefix);
+    bb[2..11].copy_from_slice(basic_code);
+    bb[11] = compute_check_digit(&bb[0..11]);
+
+    Ok(ISIN(bb))
+}
+
+/// Test whether or not the passed string is in valid ISIN format, without producing a ISIN struct
+/// value.
+pub fn validate(value: &str) -> bool {
+    if value.len() != 12 {
+        println!("Bad length: {:?}", value);
+        return false;
+    }
+
+    // We make the preliminary assumption that the string is pure ASCII, so we work with the
+    // underlying bytes. If there is Unicode in the string, the bytes will be outside the
+    // allowed range and format validations will fail.
+
+    let b = value.as_bytes();
+
+    // We slice out the three fields and validate their formats.
+
+    let prefix: &[u8] = &b[0..2];
+    if validate_prefix_format(prefix).is_err() {
+        return false;
+    }
+
+    let basic_code: &[u8] = &b[2..11];
+    if validate_basic_code_format(basic_code).is_err() {
+        return false;
+    }
+
+    let cd = b[8];
+    if validate_check_digit_format(cd).is_err() {
+        return false;
+    }
+
+    let payload = &b[0..11];
+
+    let computed_check_digit = compute_check_digit(payload);
+
+    let incorrect_check_digit = cd != computed_check_digit;
+
+    !incorrect_check_digit
+}
+
 /// An ISIN in confirmed valid format.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
 #[repr(transparent)]
