@@ -47,8 +47,8 @@ pub enum ParseError {
     InvalidLength { was: usize },
     /// The input country code is not two uppercase ASCII alphabetic characters.
     InvalidCountryCode { was: [u8; 2] },
-    /// The input security identifier is not nine uppercase ASCII alphanumeric characters.
-    InvalidSecurityIdentifier { was: [u8; 9] },
+    /// The input security id is not nine uppercase ASCII alphanumeric characters.
+    InvalidSecurityId { was: [u8; 9] },
     /// The input check digit is not a single ASCII decimal digit character.
     InvalidCheckDigit { was: u8 },
     /// The input check digit has in a valid format, but has an incorrect value.
@@ -69,16 +69,12 @@ impl Debug for ParseError {
                     write!(f, "InvalidCountryCode {{ was: (invalid UTF-8) {:?} }}", was)
                 }
             },
-            ParseError::InvalidSecurityIdentifier { was } => match std::str::from_utf8(was) {
+            ParseError::InvalidSecurityId { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
-                    write!(f, "InvalidSecurityIdentifier {{ was: {:?} }}", s)
+                    write!(f, "InvalidSecurityId {{ was: {:?} }}", s)
                 }
                 Err(_) => {
-                    write!(
-                        f,
-                        "InvalidSecurityIdentifier {{ was: (invalid UTF-8) {:?} }}",
-                        was
-                    )
+                    write!(f, "InvalidSecurityId {{ was: (invalid UTF-8) {:?} }}", was)
                 }
             },
             ParseError::InvalidCheckDigit { was } => {
@@ -114,15 +110,17 @@ impl Display for ParseError {
                     was)
                 }
             },
-            ParseError::InvalidSecurityIdentifier { was } => match std::str::from_utf8(was) {
+            ParseError::InvalidSecurityId { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
-                    write!(f,
-                "invalid security identifier {:?} is not nine uppercase ASCII alphanumeric characters",
-                     s)
+                    write!(
+                        f,
+                        "security id {:?} is not nine uppercase ASCII alphanumeric characters",
+                        s
+                    )
                 }
                 Err(_) => {
                     write!(f,
-                "invalid security identifier (invalid UTF-8) {:?} is not nine uppercase ASCII alphanumeric characters",
+                "security id (invalid UTF-8) {:?} is not nine uppercase ASCII alphanumeric characters",
                     was)
                 }
             },
@@ -171,7 +169,7 @@ fn validate_security_id_format(si: &[u8]) -> Result<(), ParseError> {
         if !(b.is_ascii_digit() || (b.is_ascii_alphabetic() && b.is_ascii_uppercase())) {
             let mut si_copy: [u8; 9] = [0; 9];
             si_copy.copy_from_slice(si);
-            return Err(ParseError::InvalidSecurityIdentifier { was: si_copy });
+            return Err(ParseError::InvalidSecurityId { was: si_copy });
         }
     }
     Ok(())
@@ -296,12 +294,17 @@ impl ISIN {
         unsafe { self.0[0..2].to_str_unchecked() } // This is safe because we know it is ASCII
     }
 
-    /// Return just the _security identifier_ portion of the ISIN.
-    pub fn security_identifier(&self) -> &str {
+    /// Return just the _security id_ portion of the ISIN.
+    pub fn security_id(&self) -> &str {
         unsafe { self.0[2..11].to_str_unchecked() } // This is safe because we know it is ASCII
     }
 
-    /// Return the &ldquo;payload&rdquo; &mdash; everything but the check digit.
+    /// Return just the _security id_ portion of the ISIN.
+    #[deprecated(since = "0.1.8", note = "please use `security_id` instead")]
+    pub fn security_identifier(&self) -> &str {
+        self.security_id()
+    }
+
     pub fn payload(&self) -> &str {
         unsafe { self.0[0..11].to_str_unchecked() } // This is safe because we know it is ASCII
     }
@@ -323,7 +326,7 @@ mod tests {
             Ok(isin) => {
                 assert_eq!(isin.to_string(), "US0378331005");
                 assert_eq!(isin.country_code(), "US");
-                assert_eq!(isin.security_identifier(), "037833100");
+                assert_eq!(isin.security_id(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
             Err(_) => assert!(false, "Did not expect parsing to fail"),
@@ -336,7 +339,7 @@ mod tests {
             Ok(isin) => {
                 assert_eq!(isin.to_string(), "US0378331005");
                 assert_eq!(isin.country_code(), "US");
-                assert_eq!(isin.security_identifier(), "037833100");
+                assert_eq!(isin.security_id(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
             Err(_) => assert!(false, "Did not expect parsing to fail"),
@@ -351,14 +354,44 @@ mod tests {
 
     #[test]
     fn reject_lowercase_country_code_if_strict() {
-        let res = parse_strict("us0378331005");
-        assert!(res.is_err());
+        match parse("us0378331005") {
+            Err(ParseError::InvalidCountryCode { was: _ }) => {} // Ok
+            Err(err) => {
+                assert!(
+                    false,
+                    "Expected Err(InvalidCountryCode {{ ... }}), but got: Err({:?})",
+                    err
+                )
+            }
+            Ok(isin) => {
+                assert!(
+                    false,
+                    "Expected Err(InvalidCountryCode {{ ... }}), but got: Ok({:?})",
+                    isin
+                )
+            }
+        }
     }
 
     #[test]
     fn reject_lowercase_security_id_if_strict() {
-        let res = parse_strict("US09739d1000");
-        assert!(res.is_err());
+        match parse("US09739d1000") {
+            Err(ParseError::InvalidSecurityId { was: _ }) => {} // Ok
+            Err(err) => {
+                assert!(
+                    false,
+                    "Expected Err(InvalidSecurityId {{ ... }}), but got: Err({:?})",
+                    err
+                )
+            }
+            Ok(isin) => {
+                assert!(
+                    false,
+                    "Expected Err(InvalidSecurityId {{ ... }}), but got: Ok({:?})",
+                    isin
+                )
+            }
+        }
     }
 
     #[test]
