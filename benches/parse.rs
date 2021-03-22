@@ -10,7 +10,7 @@ use isin;
 
 fn bench_parses(c: &mut Criterion) {
     c.bench_function("x", |b| {
-        b.iter(|| isin::parse_strict(black_box("US0378331005")))
+        b.iter(|| isin::parse(black_box("US0378331005")))
     });
 }
 
