@@ -33,6 +33,13 @@ match isin::parse_strict(isin_string) {
 }
 ```
 
+## Related crates
+
+This crate is part of the Financial Identifiers series:
+
+* [CUSIP](https://crates.io/crates/cusip)
+* ISIN
+
 ## License
 
 Licensed under either of
