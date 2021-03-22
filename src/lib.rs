@@ -100,13 +100,15 @@ impl Display for ParseError {
             }
             ParseError::InvalidCountryCode { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
-                    write!(f,
-                    "invalid country code {:?} is not two uppercase ASCII alphabetic characters",
-                     s)
+                    write!(
+                        f,
+                        "country code {:?} is not two uppercase ASCII alphabetic characters",
+                        s
+                    )
                 }
                 Err(_) => {
                     write!(f,
-                    "invalid country code (invalid UTF-8) {:?} is not two uppercase ASCII alphabetic characters",
+                    "country code (invalid UTF-8) {:?} is not two uppercase ASCII alphabetic characters",
                     was)
                 }
             },
@@ -127,7 +129,7 @@ impl Display for ParseError {
             ParseError::InvalidCheckDigit { was } => {
                 write!(
                     f,
-                    "invalid check digit {:?} is not one ASCII decimal digit",
+                    "check digit {:?} is not one ASCII decimal digit",
                     *was as char
                 )
             }
@@ -210,8 +212,8 @@ pub fn parse(value: &str) -> Result<ISIN, ParseError> {
     let cd = b[11];
     validate_check_digit_format(cd)?;
 
-    // Now, we need to compute the correct check digit value from the "payload" (the country
-    // code and security identifier fields).
+    // Now, we need to compute the correct check digit value from the "payload" (everything except
+    // the check digit).
 
     let payload = &b[0..11];
 
@@ -305,6 +307,7 @@ impl ISIN {
         self.security_id()
     }
 
+    /// Return the &ldquo;payload&rdquo; &mdash; everything except the check digit.
     pub fn payload(&self) -> &str {
         unsafe { self.0[0..11].to_str_unchecked() } // This is safe because we know it is ASCII
     }
@@ -329,7 +332,7 @@ mod tests {
                 assert_eq!(isin.security_id(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
-            Err(_) => assert!(false, "Did not expect parsing to fail"),
+            Err(err) => assert!(false, "Did not expect parsing to fail: {}", err),
         }
     }
 
@@ -342,7 +345,7 @@ mod tests {
                 assert_eq!(isin.security_id(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
-            Err(_) => assert!(false, "Did not expect parsing to fail"),
+            Err(err) => assert!(false, "Did not expect parsing to fail: {}", err),
         }
     }
 
