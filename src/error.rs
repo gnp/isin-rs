@@ -46,7 +46,7 @@ pub enum ISINError {
         /// The _Check Digit_ we found
         was: u8,
     },
-    /// The input _Check Digit_ has in a valid format, but has an incorrect value.
+    /// The input _Check Digit_ is in a valid format, but has an incorrect value.
     IncorrectCheckDigit {
         /// The _Check Digit_ we found
         was: u8,
