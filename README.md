@@ -5,7 +5,12 @@ An `ISIN` type for working with validated International Security Identifiers (IS
 
 The checksum calculation uses a table-driven algorithm to minimize overhead _vs._ a direct translation of the formula
 definition.
- 
+
+This crate is part of the Financial Identifiers series:
+
+* [CUSIP](https://crates.io/crates/cusip): Committee on Uniform Security Identification Procedures (ANSI X9.6-2020)
+* [ISIN](https://crates.io/crates/isin): International Securities Identification Number (ISO 6166:2021)
+* [LEI](https://crates.io/crates/lei): Legal Entity Identifier (ISO 17442:2020)
 
 ## Usage
 
