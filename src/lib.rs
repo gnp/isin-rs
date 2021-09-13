@@ -377,38 +377,38 @@ mod tests {
 
     #[test]
     fn validate_examples_from_standard_annex_c() {
-        assert!(true, validate("ES0SI0000005")); // Example 1, page 10: "IBEX 35"
-        assert!(true, validate("JP3788600009")); // Example 2, page 11: "Hitachi Ltd. Shares"
-        assert!(true, validate("DE000A0GNPZ3")); // Example 3, page 11: "Allianz Finance II 5 3/8% without expiration date"
+        assert!(true, "{}", validate("ES0SI0000005")); // Example 1, page 10: "IBEX 35"
+        assert!(true, "{}", validate("JP3788600009")); // Example 2, page 11: "Hitachi Ltd. Shares"
+        assert!(true, "{}", validate("DE000A0GNPZ3")); // Example 3, page 11: "Allianz Finance II 5 3/8% without expiration date"
     }
 
     #[test]
     fn validate_examples_from_standard_annex_e() {
-        assert!(true, validate("JP3788600009")); // Page 13
-        assert!(true, validate("US9047847093")); // Page 13
-        assert!(true, validate("IE00BFXC1P95")); // Page 13
-        assert!(true, validate("DE000A0GNPZ3")); // Page 13
-        assert!(true, validate("XS2021448886")); // Page 13
-        assert!(true, validate("US36962GXZ26")); // Page 13
-        assert!(true, validate("FR0000571077")); // Page 13
-        assert!(true, validate("US277847UB38")); // Page 13
-        assert!(true, validate("US65412AEW80")); // Page 13
-        assert!(true, validate("GB00BF0FCW58")); // Page 13
-        assert!(true, validate("FR0000312928")); // Page 13
-        assert!(true, validate("DE000DL3T7M1")); // Page 13
+        assert!(true, "{}", validate("JP3788600009")); // Page 13
+        assert!(true, "{}", validate("US9047847093")); // Page 13
+        assert!(true, "{}", validate("IE00BFXC1P95")); // Page 13
+        assert!(true, "{}", validate("DE000A0GNPZ3")); // Page 13
+        assert!(true, "{}", validate("XS2021448886")); // Page 13
+        assert!(true, "{}", validate("US36962GXZ26")); // Page 13
+        assert!(true, "{}", validate("FR0000571077")); // Page 13
+        assert!(true, "{}", validate("US277847UB38")); // Page 13
+        assert!(true, "{}", validate("US65412AEW80")); // Page 13
+        assert!(true, "{}", validate("GB00BF0FCW58")); // Page 13
+        assert!(true, "{}", validate("FR0000312928")); // Page 13
+        assert!(true, "{}", validate("DE000DL3T7M1")); // Page 13
 
-        assert!(true, validate("ES0A02234250")); // Page 14
-        assert!(true, validate("EZR9HY1361L7")); // Page 14
-        assert!(true, validate("CH0107166065")); // Page 14
-        assert!(true, validate("XS0313614355")); // Page 14
-        assert!(true, validate("DE000A0AE077")); // Page 14
-        assert!(true, validate("CH0002813860")); // Page 14
-        assert!(true, validate("TRLTCMB00045")); // Page 14
-        assert!(true, validate("ES0SI0000005")); // Page 14
-        assert!(true, validate("GB00B56Z6W79")); // Page 14
-        assert!(true, validate("AU000000SKI7")); // Page 14
-        assert!(true, validate("EU000A1RRN98")); // Page 14
-        assert!(true, validate("LI0024807526")); // Page 14
+        assert!(true, "{}", validate("ES0A02234250")); // Page 14
+        assert!(true, "{}", validate("EZR9HY1361L7")); // Page 14
+        assert!(true, "{}", validate("CH0107166065")); // Page 14
+        assert!(true, "{}", validate("XS0313614355")); // Page 14
+        assert!(true, "{}", validate("DE000A0AE077")); // Page 14
+        assert!(true, "{}", validate("CH0002813860")); // Page 14
+        assert!(true, "{}", validate("TRLTCMB00045")); // Page 14
+        assert!(true, "{}", validate("ES0SI0000005")); // Page 14
+        assert!(true, "{}", validate("GB00B56Z6W79")); // Page 14
+        assert!(true, "{}", validate("AU000000SKI7")); // Page 14
+        assert!(true, "{}", validate("EU000A1RRN98")); // Page 14
+        assert!(true, "{}", validate("LI0024807526")); // Page 14
     }
 
     #[test]
