@@ -240,6 +240,7 @@ pub fn validate(value: &str) -> bool {
 /// An ISIN in confirmed valid format.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
 #[repr(transparent)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct ISIN([u8; 12]);
 
 impl Display for ISIN {
