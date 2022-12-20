@@ -132,7 +132,7 @@ fn main() {
             bad
         );
 
-        let result = if bad == 0 { 0 } else { 1 };
+        let result = (bad == 0) as i32;
         std::process::exit(result);
     }
 }
