@@ -32,8 +32,7 @@
 //! * [LEI](https://crates.io/crates/lei): Legal Entity Identifier (ISO 17442:2020)
 //!
 
-use std::fmt::Formatter;
-use std::fmt::{Debug, Display};
+use std::fmt;
 use std::str::FromStr;
 
 use bstr::ByteSlice;
@@ -243,15 +242,22 @@ pub fn validate(value: &str) -> bool {
 pub struct ReadmeDoctests;
 
 /// An ISIN in confirmed valid format.
-#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash)]
 #[repr(transparent)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct ISIN([u8; 12]);
 
-impl Display for ISIN {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let temp = unsafe { self.0[..].to_str_unchecked() }; // This is safe because we know it is ASCII
+impl fmt::Display for ISIN {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let temp = unsafe { self.as_bytes().to_str_unchecked() }; // This is safe because we know it is ASCII
         write!(f, "{}", temp)
+    }
+}
+
+impl fmt::Debug for ISIN {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let temp = unsafe { self.as_bytes().to_str_unchecked() }; // This is safe because we know it is ASCII
+        write!(f, "ISIN({})", temp)
     }
 }
 
@@ -264,6 +270,11 @@ impl FromStr for ISIN {
 }
 
 impl ISIN {
+    /// Internal convenience function for treating the ASCII characters as a byte-array slice.
+    fn as_bytes(&self) -> &[u8] {
+        &self.0[..]
+    }
+
     /// Forwards to crate-level `parse()` for backward compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
     pub fn parse_strict<S>(value: S) -> Result<ISIN, ISINError>
