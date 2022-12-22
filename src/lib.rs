@@ -238,6 +238,10 @@ pub fn validate(value: &str) -> bool {
     !incorrect_check_digit
 }
 
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
+
 /// An ISIN in confirmed valid format.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Debug)]
 #[repr(transparent)]
