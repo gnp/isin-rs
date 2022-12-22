@@ -242,6 +242,13 @@ pub fn validate(value: &str) -> bool {
 pub struct ReadmeDoctests;
 
 /// An ISIN in confirmed valid format.
+///
+/// You cannot construct an ISIN value manually. This does not compile:
+///
+/// ```compile_fail
+/// use isin;
+/// let cannot_construct = isin::ISIN([0_u8; 12]);
+/// ```
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash)]
 #[repr(transparent)]
 #[allow(clippy::upper_case_acronyms)]
