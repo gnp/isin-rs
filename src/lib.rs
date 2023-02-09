@@ -201,7 +201,7 @@ pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, ISINErro
 /// value.
 pub fn validate(value: &str) -> bool {
     if value.len() != 12 {
-        println!("Bad length: {:?}", value);
+        println!("Bad length: {value:?}");
         return false;
     }
 
@@ -257,14 +257,14 @@ pub struct ISIN([u8; 12]);
 impl fmt::Display for ISIN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let temp = unsafe { self.as_bytes().to_str_unchecked() }; // This is safe because we know it is ASCII
-        write!(f, "{}", temp)
+        write!(f, "{temp}")
     }
 }
 
 impl fmt::Debug for ISIN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let temp = unsafe { self.as_bytes().to_str_unchecked() }; // This is safe because we know it is ASCII
-        write!(f, "ISIN({})", temp)
+        write!(f, "ISIN({temp})")
     }
 }
 

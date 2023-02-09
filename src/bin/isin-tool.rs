@@ -84,7 +84,7 @@ fn main() {
             Ok(isin) => {
                 good += 1;
                 if fix {
-                    println!("{}", isin);
+                    println!("{isin}");
                 }
             }
             Err(isin::ISINError::IncorrectCheckDigit {
@@ -99,11 +99,11 @@ fn main() {
 
                     // We know the Check Digit was the only problem, so we can safely unwrap()
                     let isin = isin::build_from_payload(payload).unwrap();
-                    println!("{}", isin);
+                    println!("{isin}");
                 }
             }
             Err(err) => {
-                eprintln!("Input: {}; Error: {}", line, err);
+                eprintln!("Input: {line}; Error: {err}");
                 bad += 1;
             }
         }
