@@ -38,9 +38,9 @@
 /// panics because it is only intended to be called from locations where the input has already been
 /// validated to match the character set requirements.
 fn char_value(c: &u8) -> u8 {
-    if (b'0'..=b'9').contains(c) {
+    if c.is_ascii_digit() {
         c - b'0'
-    } else if (b'A'..=b'Z').contains(c) {
+    } else if c.is_ascii_uppercase() {
         c - b'A' + 10
     } else {
         panic!("Non-ASCII-alphanumeric characters should be impossible here!");
