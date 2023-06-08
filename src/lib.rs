@@ -33,9 +33,8 @@
 //!
 
 use std::fmt;
+use std::str::from_utf8_unchecked;
 use std::str::FromStr;
-
-use bstr::ByteSlice;
 
 pub mod checksum;
 
@@ -256,14 +255,14 @@ pub struct ISIN([u8; 12]);
 
 impl fmt::Display for ISIN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let temp = unsafe { self.as_bytes().to_str_unchecked() }; // This is safe because we know it is ASCII
+        let temp = unsafe { from_utf8_unchecked(self.as_bytes()) }; // This is safe because we know it is ASCII
         write!(f, "{temp}")
     }
 }
 
 impl fmt::Debug for ISIN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let temp = unsafe { self.as_bytes().to_str_unchecked() }; // This is safe because we know it is ASCII
+        let temp = unsafe { from_utf8_unchecked(self.as_bytes()) }; // This is safe because we know it is ASCII
         write!(f, "ISIN({temp})")
     }
 }
@@ -305,12 +304,12 @@ impl ISIN {
     /// Return a string representation of the ISIN.
     #[deprecated(since = "0.1.7", note = "please use `to_string` instead")]
     pub fn value(&self) -> &str {
-        unsafe { self.0[..].to_str_unchecked() } // This is safe because we know it is ASCII
+        unsafe { from_utf8_unchecked(&self.0[..]) } // This is safe because we know it is ASCII
     }
 
     /// Return just the _Prefix_ portion of the ISIN.
     pub fn prefix(&self) -> &str {
-        unsafe { self.0[0..2].to_str_unchecked() } // This is safe because we know it is ASCII
+        unsafe { from_utf8_unchecked(&self.0[0..2]) } // This is safe because we know it is ASCII
     }
 
     /// Return just the _Prefix_ portion of the ISIN.
@@ -321,7 +320,7 @@ impl ISIN {
 
     /// Return just the _Basic Code_ portion of the ISIN.
     pub fn basic_code(&self) -> &str {
-        unsafe { self.0[2..11].to_str_unchecked() } // This is safe because we know it is ASCII
+        unsafe { from_utf8_unchecked(&self.0[2..11]) } // This is safe because we know it is ASCII
     }
 
     /// Return just the _Basic Code_ portion of the ISIN.
@@ -332,7 +331,7 @@ impl ISIN {
 
     /// Return the _Payload_ &mdash; everything except the _Check Digit_.
     pub fn payload(&self) -> &str {
-        unsafe { self.0[0..11].to_str_unchecked() } // This is safe because we know it is ASCII
+        unsafe { from_utf8_unchecked(&self.0[0..11]) } // This is safe because we know it is ASCII
     }
 
     /// Return just the _Check Digit_ portion of the ISIN.

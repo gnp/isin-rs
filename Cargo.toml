@@ -16,7 +16,6 @@ proptest = "1.2.0"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [dependencies]
-bstr = { version = "1.2", features = ["std"] }
 
 [[bench]]
 name = "checksum_compare"
