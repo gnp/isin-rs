@@ -12,8 +12,8 @@ repository = "https://github.com/gnp/isin-rs.git"
 include = []
 
 [dev-dependencies]
-proptest = "1.0"
-criterion = { version = "0.3", features = ["html_reports"] }
+proptest = "1.2.0"
+criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [dependencies]
 bstr = { version = "1.2", features = ["std"] }
