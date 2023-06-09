@@ -8,6 +8,7 @@ definition.
 
 This crate is part of the Financial Identifiers series:
 
+* [CIK](https://crates.io/crates/cik): Central Index Key (SEC EDGAR)
 * [CUSIP](https://crates.io/crates/cusip): Committee on Uniform Security Identification Procedures (ANSI X9.6-2020)
 * [ISIN](https://crates.io/crates/isin): International Securities Identification Number (ISO 6166:2021)
 * [LEI](https://crates.io/crates/lei): Legal Entity Identifier (ISO 17442:2020)
