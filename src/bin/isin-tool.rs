@@ -91,7 +91,6 @@ fn main() {
                 expected: _,
             }) => {
                 bad += 1;
-                fixed += 1;
                 if fix {
                     let payload = &line.as_bytes()[0..11]; // We know it was the right length
                     let payload = unsafe { from_utf8_unchecked(payload) }; // We know it is ASCII
@@ -99,6 +98,7 @@ fn main() {
                     // We know the Check Digit was the only problem, so we can safely unwrap()
                     let isin = isin::build_from_payload(payload).unwrap();
                     println!("{isin}");
+                    fixed += 1;
                 }
             }
             Err(err) => {
