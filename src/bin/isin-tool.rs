@@ -3,7 +3,7 @@
 //! ensure there are no malformed entries present. If you have a known-good file of valid ISINs, it
 //! can be used to validate this crate considers them valid.
 //!
-//! As part of the `isin` crate's initial validation, this tool was run on a file of 1,591,249
+//! As part of the `isin` crate's initial validation, this tool was run on a file of 5,273,047
 //! unique ISINs produced by processing a file mapping LEIs to ISINs obtained from GLEIF. The
 //! [GLEIF file](https://www.gleif.org/en/lei-data/lei-mapping/download-isin-to-lei-relationship-files)
 //! is very large (the version from 2021-02-09 was about 170MB). Here are a few example records from
@@ -44,7 +44,7 @@
 //! And, output will be something like this:
 //!
 //! ```text
-//! Read 1591249 values; 1591249 were valid ISINs and 0 were not.
+//! Read 5273047 values; 5273047 were valid ISINs and 0 were not.
 //! ```
 //!
 //! If no bad values were found, the tool will exit with zero status, else non-zero.
