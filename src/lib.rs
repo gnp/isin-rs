@@ -222,7 +222,7 @@ pub fn validate(value: &str) -> bool {
         return false;
     }
 
-    let cd = b[8];
+    let cd = b[11];
     if validate_check_digit_format(cd).is_err() {
         return false;
     }
