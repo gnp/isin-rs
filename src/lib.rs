@@ -397,7 +397,7 @@ mod tests {
                 assert_eq!(isin.basic_code(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
-            Err(err) => assert!(false, "Did not expect parsing to fail: {}", err),
+            Err(err) => panic!("Did not expect parsing to fail: {}", err),
         }
     }
 
@@ -410,7 +410,7 @@ mod tests {
                 assert_eq!(isin.basic_code(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
-            Err(err) => assert!(false, "Did not expect building to fail: {}", err),
+            Err(err) => panic!("Did not expect building to fail: {}", err),
         }
     }
 
@@ -423,7 +423,7 @@ mod tests {
                 assert_eq!(isin.basic_code(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
-            Err(err) => assert!(false, "Did not expect building to fail: {}", err),
+            Err(err) => panic!("Did not expect building to fail: {}", err),
         }
     }
 
@@ -436,7 +436,7 @@ mod tests {
                 assert_eq!(isin.basic_code(), "037833100");
                 assert_eq!(isin.check_digit(), '5');
             }
-            Err(err) => assert!(false, "Did not expect parsing to fail: {}", err),
+            Err(err) => panic!("Did not expect parsing to fail: {}", err),
         }
     }
 
@@ -487,15 +487,13 @@ mod tests {
         match parse("us0378331005") {
             Err(ISINError::InvalidPrefix { was: _ }) => {} // Ok
             Err(err) => {
-                assert!(
-                    false,
+                panic!(
                     "Expected Err(InvalidPrefix {{ ... }}), but got: Err({:?})",
                     err
                 )
             }
             Ok(isin) => {
-                assert!(
-                    false,
+                panic!(
                     "Expected Err(InvalidPrefix {{ ... }}), but got: Ok({:?})",
                     isin
                 )
@@ -508,15 +506,13 @@ mod tests {
         match parse("US09739d1000") {
             Err(ISINError::InvalidBasicCode { was: _ }) => {} // Ok
             Err(err) => {
-                assert!(
-                    false,
+                panic!(
                     "Expected Err(InvalidBasicCode {{ ... }}), but got: Err({:?})",
                     err
                 )
             }
             Ok(isin) => {
-                assert!(
-                    false,
+                panic!(
                     "Expected Err(InvalidBasicCode {{ ... }}), but got: Ok({:?})",
                     isin
                 )
