@@ -174,7 +174,7 @@ mod tests {
     // *right*.
     #[test]
     fn single_chars() {
-        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
+        for c in ('0'..='9').chain('A'..='Z') {
             let s = c.to_string();
             let ss = s.as_bytes();
             let a = checksum_functional(&ss);
@@ -192,7 +192,7 @@ mod tests {
     // counted from the *right*.
     #[test]
     fn single_chars_left_of_zero() {
-        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
+        for c in ('0'..='9').chain('A'..='Z') {
             let s = format!("{}0", c);
             let ss = s.as_bytes();
             let a = checksum_functional(&ss);
@@ -209,7 +209,7 @@ mod tests {
     // for each allowed symbol preceded just by a single nine, which exercises the WIDTH table.
     #[test]
     fn nine_left_of_single_chars() {
-        for c in ('0'..='9').into_iter().chain(('A'..='Z').into_iter()) {
+        for c in ('0'..='9').chain('A'..='Z') {
             let s = format!("9{}", c);
             let ss = s.as_bytes();
             let a = checksum_functional(&ss);
