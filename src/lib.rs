@@ -248,7 +248,7 @@ pub struct ReadmeDoctests;
 /// use isin;
 /// let cannot_construct = isin::ISIN([0_u8; 12]);
 /// ```
-#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash)]
 #[repr(transparent)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct ISIN([u8; 12]);
