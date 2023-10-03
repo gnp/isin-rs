@@ -1,5 +1,3 @@
-use isin;
-
 fn main() {
     let isin_string = "US0378331005";
     match isin::parse(isin_string) {
