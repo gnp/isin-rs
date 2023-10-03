@@ -14,8 +14,14 @@ include = []
 [dev-dependencies]
 proptest = "1.2.0"
 criterion = { version = "0.5.1", features = ["html_reports"] }
+serde_json = "1.0.107"
 
 [dependencies]
+serde = { version = "1.0.188", optional = true }
+
+[features]
+default = []
+serde = ["dep:serde"]
 
 [[bench]]
 name = "checksum_compare"
@@ -24,3 +30,7 @@ harness = false
 [[bench]]
 name = "parse"
 harness = false
+
+[[example]]
+name = "serde"
+required-features = ["serde"]
