@@ -253,6 +253,12 @@ pub struct ReadmeDoctests;
 #[allow(clippy::upper_case_acronyms)]
 pub struct ISIN([u8; 12]);
 
+impl AsRef<str> for ISIN {
+    fn as_ref(&self) -> &str {
+        unsafe { from_utf8_unchecked(&self.0[..]) } // This is safe because we know it is ASCII
+    }
+}
+
 impl fmt::Display for ISIN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let temp = unsafe { from_utf8_unchecked(self.as_bytes()) }; // This is safe because we know it is ASCII
@@ -264,6 +270,43 @@ impl fmt::Debug for ISIN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let temp = unsafe { from_utf8_unchecked(self.as_bytes()) }; // This is safe because we know it is ASCII
         write!(f, "ISIN({temp})")
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for ISIN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct Visitor;
+
+        impl serde::de::Visitor<'_> for Visitor {
+            type Value = ISIN;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("an ISIN")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                crate::parse(v).map_err(E::custom)
+            }
+        }
+
+        deserializer.deserialize_str(Visitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for ISIN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_ref())
     }
 }
 
@@ -541,6 +584,63 @@ mod tests {
         #[allow(unused_must_use)]
         fn doesnt_crash(s in "\\PC*") {
             parse(&s);
+        }
+    }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        use crate::ISIN;
+
+        use proptest::{prop_assert, prop_assert_eq, proptest};
+        use serde::de::value::{self, StrDeserializer};
+        use serde::Deserialize as _;
+
+        #[test]
+        fn deserialize_apple() {
+            let isin = ISIN::deserialize(StrDeserializer::<value::Error>::new("US0378331005"))
+                .expect("successful deserialization");
+            assert_eq!(isin.to_string(), "US0378331005");
+            assert_eq!(isin.prefix(), "US");
+            assert_eq!(isin.basic_code(), "037833100");
+            assert_eq!(isin.check_digit(), '5');
+        }
+
+        #[test]
+        fn reject_empty_string() {
+            let _ = ISIN::deserialize(StrDeserializer::<value::Error>::new(""))
+                .expect_err("unsuccessful deserialization");
+        }
+
+        #[test]
+        fn reject_lowercase_prefix_if_strict() {
+            let _ = ISIN::deserialize(StrDeserializer::<value::Error>::new("us0378331005"))
+                .expect_err("unsuccessful deserialization");
+        }
+
+        #[test]
+        fn reject_lowercase_basic_code_if_strict() {
+            let _ = ISIN::deserialize(StrDeserializer::<value::Error>::new("US09739d1000"))
+                .expect_err("unsuccessful deserialization");
+        }
+
+        proptest! {
+            #[test]
+            fn doesnt_crash(s in "\\PC*") {
+                let _ = ISIN::deserialize(StrDeserializer::<value::Error>::new(&s));
+            }
+
+            #[test]
+            fn matches_parse(s in "\\PC*") {
+                let parse_result = crate::parse(&s);
+                let deserialize_result = ISIN::deserialize(StrDeserializer::<value::Error>::new(&s));
+
+                match (parse_result, deserialize_result)
+                {
+                    (Ok(parsed_isin), Ok(deserialized_isin)) => prop_assert_eq!(parsed_isin, deserialized_isin),
+                    (Ok(_), Err(_)) | (Err(_), Ok(_)) => prop_assert!(false),
+                    (Err(_), Err(_)) => {}
+                 }
+            }
         }
     }
 }
