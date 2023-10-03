@@ -177,8 +177,8 @@ mod tests {
         for c in ('0'..='9').chain('A'..='Z') {
             let s = c.to_string();
             let ss = s.as_bytes();
-            let a = checksum_functional(&ss);
-            let b = checksum_table(&ss);
+            let a = checksum_functional(ss);
+            let b = checksum_table(ss);
             assert_eq!(
                 a, b,
                 "checksum from library {} should equal that from functional style {} for \"{}\"",
@@ -195,8 +195,8 @@ mod tests {
         for c in ('0'..='9').chain('A'..='Z') {
             let s = format!("{}0", c);
             let ss = s.as_bytes();
-            let a = checksum_functional(&ss);
-            let b = checksum_table(&ss);
+            let a = checksum_functional(ss);
+            let b = checksum_table(ss);
             assert_eq!(
                 a, b,
                 "checksum from table style {} should equal that from functional style {} for \"{}\"",
@@ -212,8 +212,8 @@ mod tests {
         for c in ('0'..='9').chain('A'..='Z') {
             let s = format!("9{}", c);
             let ss = s.as_bytes();
-            let a = checksum_functional(&ss);
-            let b = checksum_table(&ss);
+            let a = checksum_functional(ss);
+            let b = checksum_table(ss);
             assert_eq!(
                 a, b,
                 "checksum from table style {} should equal that from functional style {} for \"{}\"",
@@ -226,8 +226,8 @@ mod tests {
         #[test]
         fn processes_all_valid_strings(s in "[A-Z]{2}[0-9A-Z]{9}") {
             let ss = s.as_bytes();
-            let a = checksum_functional(&ss);
-            let b = checksum_table(&ss);
+            let a = checksum_functional(ss);
+            let b = checksum_table(ss);
             assert_eq!(
                 a, b,
                 "checksum from table style {} should equal that from functional style {} for \"{}\"",
