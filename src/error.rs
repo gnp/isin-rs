@@ -162,3 +162,98 @@ impl Display for ISINError {
 }
 
 impl Error for ISINError {}
+
+#[cfg(test)]
+mod tests {
+    use crate::ISINError;
+
+    #[test]
+    fn render_display() {
+        let errors = [
+            (
+                ISINError::InvalidLength { was: 10 },
+                "invalid length 10 bytes when expecting 12",
+            ),
+            (
+                ISINError::InvalidPayloadLength { was: 8 },
+                "invalid Payload length 8 bytes when expecting 11",
+            ),
+            (
+                ISINError::InvalidPrefixLength { was: 1 },
+                "invalid Prefix length 1 bytes when expecting 2",
+            ),
+            (
+                ISINError::InvalidBasicCodeLength { was: 8 },
+                "invalid Basic Code length 8 bytes when expecting 9",
+            ),
+            (
+                ISINError::InvalidPrefix { was: *b"A{" },
+                "prefix \"A{\" is not two uppercase ASCII alphabetic characters",
+            ),
+            (
+                ISINError::InvalidBasicCode { was: *b"ABCDEFGH{" },
+                "basic code \"ABCDEFGH{\" is not nine uppercase ASCII alphanumeric characters",
+            ),
+            (
+                ISINError::InvalidCheckDigit { was: b':' },
+                "check digit ':' is not one ASCII decimal digit",
+            ),
+            (
+                ISINError::IncorrectCheckDigit {
+                    was: b'5',
+                    expected: b'6',
+                },
+                "incorrect check digit '5' when expecting '6'",
+            ),
+        ];
+
+        for (error, expected) in errors.iter() {
+            assert_eq!(format!("{}", error), *expected);
+        }
+    }
+
+    #[test]
+    fn render_debug() {
+        let errors = [
+            (
+                ISINError::InvalidLength { was: 10 },
+                "InvalidLength { was: 10 }",
+            ),
+            (
+                ISINError::InvalidPayloadLength { was: 8 },
+                "InvalidPayloadLength { was: 8 }",
+            ),
+            (
+                ISINError::InvalidPrefixLength { was: 1 },
+                "InvalidPrefixLength { was: 1 }",
+            ),
+            (
+                ISINError::InvalidBasicCodeLength { was: 8 },
+                "InvalidBasicCodeLength { was: 8 }",
+            ),
+            (
+                ISINError::InvalidPrefix { was: *b"A{" },
+                "InvalidPrefix { was: \"A{\" }",
+            ),
+            (
+                ISINError::InvalidBasicCode { was: *b"ABCDEFGH{" },
+                "InvalidBasicCode { was: \"ABCDEFGH{\" }",
+            ),
+            (
+                ISINError::InvalidCheckDigit { was: b':' },
+                "InvalidCheckDigit { was: ':' }",
+            ),
+            (
+                ISINError::IncorrectCheckDigit {
+                    was: b'5',
+                    expected: b'6',
+                },
+                "IncorrectCheckDigit { was: '5', expected: '6' }",
+            ),
+        ];
+
+        for (error, expected) in errors.iter() {
+            assert_eq!(format!("{:?}", error), *expected);
+        }
+    }
+}
