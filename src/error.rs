@@ -10,23 +10,43 @@ use std::fmt::{Debug, Display};
 #[non_exhaustive]
 #[derive(Clone, PartialEq, Eq)]
 pub enum Error {
-    /// The input length is not exactly 12 bytes.
-    InvalidLength {
+    /// The value string length is not exactly 12 characters.
+    InvalidValueStringLength {
         /// The length we found
         was: usize,
     },
-    /// The _Payload_ length is not exactly 11 bytes (checked when building).
-    InvalidPayloadLength {
+    /// The value byte array length is not exactly 12 bytes.
+    InvalidValueArrayLength {
         /// The length we found
         was: usize,
     },
-    /// The _Prefix_ length is not exactly 2 bytes (checked when building).
-    InvalidPrefixLength {
+    /// The _Payload_ string length is not exactly 11 characters.
+    InvalidPayloadStringLength {
         /// The length we found
         was: usize,
     },
-    /// The _Basic Code_ length is not exactly 9 bytes (checked when building).
-    InvalidBasicCodeLength {
+    /// The _Payload_ byte array length is not exactly 11 bytes.
+    InvalidPayloadArrayLength {
+        /// The length we found
+        was: usize,
+    },
+    /// The _Prefix_ string length is not exactly 2 characters.
+    InvalidPrefixStringLength {
+        /// The length we found
+        was: usize,
+    },
+    /// The _Prefix_ byte array length is not exactly 2 bytes.
+    InvalidPrefixArrayLength {
+        /// The length we found
+        was: usize,
+    },
+    /// The _Basic Code_ string length is not exactly 9 characters.
+    InvalidBasicCodeStringLength {
+        /// The length we found
+        was: usize,
+    },
+    /// The _Basic Code_ byte array length is not exactly 9 bytes.
+    InvalidBasicCodeArrayLength {
         /// The length we found
         was: usize,
     },
@@ -57,17 +77,29 @@ pub enum Error {
 impl Debug for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::InvalidLength { was } => {
-                write!(f, "InvalidLength {{ was: {was:?} }}")
+            Error::InvalidValueStringLength { was } => {
+                write!(f, "InvalidValueStringLength {{ was: {was:?} }}")
             }
-            Error::InvalidPayloadLength { was } => {
-                write!(f, "InvalidPayloadLength {{ was: {was:?} }}")
+            Error::InvalidValueArrayLength { was } => {
+                write!(f, "InvalidValueArrayLength {{ was: {was:?} }}")
             }
-            Error::InvalidPrefixLength { was } => {
-                write!(f, "InvalidPrefixLength {{ was: {was:?} }}")
+            Error::InvalidPayloadStringLength { was } => {
+                write!(f, "InvalidPayloadStringLength {{ was: {was:?} }}")
             }
-            Error::InvalidBasicCodeLength { was } => {
-                write!(f, "InvalidBasicCodeLength {{ was: {was:?} }}")
+            Error::InvalidPayloadArrayLength { was } => {
+                write!(f, "InvalidPayloadArrayLength {{ was: {was:?} }}")
+            }
+            Error::InvalidPrefixStringLength { was } => {
+                write!(f, "InvalidPrefixStringLength {{ was: {was:?} }}")
+            }
+            Error::InvalidPrefixArrayLength { was } => {
+                write!(f, "InvalidPrefixArrayLength {{ was: {was:?} }}")
+            }
+            Error::InvalidBasicCodeStringLength { was } => {
+                write!(f, "InvalidBasicCodeStringLength {{ was: {was:?} }}")
+            }
+            Error::InvalidBasicCodeArrayLength { was } => {
+                write!(f, "InvalidBasicCodeArrayLength {{ was: {was:?} }}")
             }
             Error::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
@@ -103,17 +135,53 @@ impl Debug for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::InvalidLength { was } => {
-                write!(f, "invalid length {was} bytes when expecting 12")
+            Error::InvalidValueStringLength { was } => {
+                write!(
+                    f,
+                    "invalid value string length {was} characters when expecting 12"
+                )
             }
-            Error::InvalidPayloadLength { was } => {
-                write!(f, "invalid Payload length {was} bytes when expecting 11")
+            Error::InvalidValueArrayLength { was } => {
+                write!(
+                    f,
+                    "invalid value array length {was} bytes when expecting 12"
+                )
             }
-            Error::InvalidPrefixLength { was } => {
-                write!(f, "invalid Prefix length {was} bytes when expecting 2")
+            Error::InvalidPayloadStringLength { was } => {
+                write!(
+                    f,
+                    "invalid Payload string length {was} characters when expecting 11"
+                )
             }
-            Error::InvalidBasicCodeLength { was } => {
-                write!(f, "invalid Basic Code length {was} bytes when expecting 9")
+            Error::InvalidPayloadArrayLength { was } => {
+                write!(
+                    f,
+                    "invalid Payload array length {was} bytes when expecting 11"
+                )
+            }
+            Error::InvalidPrefixArrayLength { was } => {
+                write!(
+                    f,
+                    "invalid Prefix array length {was} bytes when expecting 2"
+                )
+            }
+            Error::InvalidPrefixStringLength { was } => {
+                write!(
+                    f,
+                    "invalid Prefix string length {was} characters when expecting 2"
+                )
+            }
+            Error::InvalidBasicCodeStringLength { was } => {
+                write!(
+                    f,
+                    "invalid Basic Code string length {was} characters when expecting 9"
+                )
+            }
+            Error::InvalidBasicCodeArrayLength { was } => {
+                write!(
+                    f,
+                    "invalid Basic Code array length {was} bytes when expecting 9"
+                )
             }
             Error::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
@@ -170,20 +238,36 @@ mod tests {
     fn render_display() {
         let errors = [
             (
-                Error::InvalidLength { was: 10 },
-                "invalid length 10 bytes when expecting 12",
+                Error::InvalidValueStringLength { was: 10 },
+                "invalid value string length 10 characters when expecting 12",
             ),
             (
-                Error::InvalidPayloadLength { was: 8 },
-                "invalid Payload length 8 bytes when expecting 11",
+                Error::InvalidValueArrayLength { was: 10 },
+                "invalid value array length 10 bytes when expecting 12",
             ),
             (
-                Error::InvalidPrefixLength { was: 1 },
-                "invalid Prefix length 1 bytes when expecting 2",
+                Error::InvalidPayloadStringLength { was: 8 },
+                "invalid Payload string length 8 characters when expecting 11",
             ),
             (
-                Error::InvalidBasicCodeLength { was: 8 },
-                "invalid Basic Code length 8 bytes when expecting 9",
+                Error::InvalidPayloadArrayLength { was: 8 },
+                "invalid Payload array length 8 bytes when expecting 11",
+            ),
+            (
+                Error::InvalidPrefixStringLength { was: 1 },
+                "invalid Prefix string length 1 characters when expecting 2",
+            ),
+            (
+                Error::InvalidPrefixArrayLength { was: 1 },
+                "invalid Prefix array length 1 bytes when expecting 2",
+            ),
+            (
+                Error::InvalidBasicCodeStringLength { was: 8 },
+                "invalid Basic Code string length 8 characters when expecting 9",
+            ),
+            (
+                Error::InvalidBasicCodeArrayLength { was: 8 },
+                "invalid Basic Code array length 8 bytes when expecting 9",
             ),
             (
                 Error::InvalidPrefix { was: *b"A{" },
@@ -215,20 +299,28 @@ mod tests {
     fn render_debug() {
         let errors = [
             (
-                Error::InvalidLength { was: 10 },
-                "InvalidLength { was: 10 }",
+                Error::InvalidValueStringLength { was: 10 },
+                "InvalidValueStringLength { was: 10 }",
             ),
             (
-                Error::InvalidPayloadLength { was: 8 },
-                "InvalidPayloadLength { was: 8 }",
+                Error::InvalidValueArrayLength { was: 10 },
+                "InvalidValueArrayLength { was: 10 }",
             ),
             (
-                Error::InvalidPrefixLength { was: 1 },
-                "InvalidPrefixLength { was: 1 }",
+                Error::InvalidPayloadStringLength { was: 8 },
+                "InvalidPayloadStringLength { was: 8 }",
             ),
             (
-                Error::InvalidBasicCodeLength { was: 8 },
-                "InvalidBasicCodeLength { was: 8 }",
+                Error::InvalidPayloadArrayLength { was: 8 },
+                "InvalidPayloadArrayLength { was: 8 }",
+            ),
+            (
+                Error::InvalidPrefixArrayLength { was: 1 },
+                "InvalidPrefixArrayLength { was: 1 }",
+            ),
+            (
+                Error::InvalidBasicCodeArrayLength { was: 8 },
+                "InvalidBasicCodeArrayLength { was: 8 }",
             ),
             (
                 Error::InvalidPrefix { was: *b"A{" },

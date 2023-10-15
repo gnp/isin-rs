@@ -43,41 +43,59 @@ use checksum::checksum_table;
 pub mod error;
 pub use error::Error;
 
-/// Compute the _check digit_ for an array of u8. No attempt is made to ensure the input string
+/// Compute the _Check Digit_ for an array of u8. No attempt is made to ensure the input string
 /// is in the ISIN payload format or length. If an illegal character (not an ASCII digit and not
 /// an ASCII uppercase letter) is encountered, this function will panic.
-pub fn compute_check_digit(s: &[u8]) -> u8 {
+fn compute_check_digit(s: &[u8]) -> u8 {
     let sum = checksum_table(s);
     b'0' + sum
 }
 
-fn validate_prefix_format(cc: &[u8]) -> Result<(), Error> {
-    for b in cc {
+fn validate_prefix_format(prefix: &[u8]) -> Result<&[u8], Error> {
+    if prefix.len() != 2 {
+        return Err(Error::InvalidPrefixArrayLength { was: prefix.len() });
+    }
+    for b in prefix {
         if !(b.is_ascii_alphabetic() && b.is_ascii_uppercase()) {
-            let mut cc_copy: [u8; 2] = [0; 2];
-            cc_copy.copy_from_slice(cc);
-            return Err(Error::InvalidPrefix { was: cc_copy });
+            let mut prefix_copy: [u8; 2] = [0; 2];
+            prefix_copy.copy_from_slice(prefix);
+            return Err(Error::InvalidPrefix { was: prefix_copy });
         }
     }
-    Ok(())
+    Ok(prefix)
 }
 
-fn validate_basic_code_format(si: &[u8]) -> Result<(), Error> {
-    for b in si {
+fn validate_basic_code_format(basic_code: &[u8]) -> Result<&[u8], Error> {
+    if basic_code.len() != 9 {
+        return Err(Error::InvalidBasicCodeArrayLength {
+            was: basic_code.len(),
+        });
+    }
+    for b in basic_code {
         if !(b.is_ascii_digit() || (b.is_ascii_alphabetic() && b.is_ascii_uppercase())) {
-            let mut si_copy: [u8; 9] = [0; 9];
-            si_copy.copy_from_slice(si);
-            return Err(Error::InvalidBasicCode { was: si_copy });
+            let mut basic_code_copy: [u8; 9] = [0; 9];
+            basic_code_copy.copy_from_slice(basic_code);
+            return Err(Error::InvalidBasicCode {
+                was: basic_code_copy,
+            });
         }
     }
-    Ok(())
+    Ok(basic_code)
 }
 
-fn validate_check_digit_format(cd: u8) -> Result<(), Error> {
-    if !cd.is_ascii_digit() {
-        Err(Error::InvalidCheckDigit { was: cd })
+fn validate_check_digit_value(payload: &[u8], check_digit: u8) -> Result<u8, Error> {
+    if !check_digit.is_ascii_digit() {
+        Err(Error::InvalidCheckDigit { was: check_digit })
     } else {
-        Ok(())
+        let computed_check_digit = compute_check_digit(payload);
+        if check_digit != computed_check_digit {
+            Err(Error::IncorrectCheckDigit {
+                was: check_digit,
+                expected: computed_check_digit,
+            })
+        } else {
+            Ok(check_digit)
+        }
     }
 }
 
@@ -85,44 +103,10 @@ fn validate_check_digit_format(cd: u8) -> Result<(), Error> {
 /// uppercase alphanumerics with no leading or trailing whitespace in addition to being the
 /// right length and format.
 pub fn parse(value: &str) -> Result<ISIN, Error> {
-    if value.len() != 12 {
-        return Err(Error::InvalidLength { was: value.len() });
-    }
-
-    // We make the preliminary assumption that the string is pure ASCII, so we work with the
-    // underlying bytes. If there is Unicode in the string, the bytes will be outside the
-    // allowed range and format validations will fail.
-
-    let b = value.as_bytes();
-
-    // We slice out the three fields and validate their formats.
-
-    let cc: &[u8] = &b[0..2];
-    validate_prefix_format(cc)?;
-
-    let si: &[u8] = &b[2..11];
-    validate_basic_code_format(si)?;
-
-    let cd = b[11];
-    validate_check_digit_format(cd)?;
-
-    // Now, we need to compute the correct check digit value from the "payload" (everything except
-    // the check digit).
-
-    let payload = &b[0..11];
-
-    let computed_check_digit = compute_check_digit(payload);
-
-    let incorrect_check_digit = cd != computed_check_digit;
-    if incorrect_check_digit {
-        return Err(Error::IncorrectCheckDigit {
-            was: cd,
-            expected: computed_check_digit,
-        });
-    }
+    let value = validate(value)?;
 
     let mut bb = [0u8; 12];
-    bb.copy_from_slice(b);
+    bb.copy_from_slice(value);
 
     Ok(ISIN(bb))
 }
@@ -137,18 +121,15 @@ pub fn parse_loose(value: &str) -> Result<ISIN, Error> {
 }
 
 /// Build an ISIN from a _Payload_ (an already-concatenated _Prefix_ and _Basic Code_). The
-/// _Check Digit is automatically computed.
+/// _Check Digit_ is automatically computed.
 pub fn build_from_payload(payload: &str) -> Result<ISIN, Error> {
-    if payload.len() != 11 {
-        return Err(Error::InvalidPayloadLength { was: payload.len() });
-    }
-    let b = &payload.as_bytes()[0..11];
+    // We make the preliminary assumption that the string is pure ASCII, so we work with the
+    // underlying bytes. If there is Unicode in the string, the bytes will be outside the
+    // allowed range and format validations will fail.
 
-    let prefix = &b[0..2];
-    validate_prefix_format(prefix)?;
+    let b = payload.as_bytes();
 
-    let basic_code = &b[2..11];
-    validate_basic_code_format(basic_code)?;
+    validate_payload_format(b)?;
 
     let mut bb = [0u8; 12];
 
@@ -162,13 +143,13 @@ pub fn build_from_payload(payload: &str) -> Result<ISIN, Error> {
 /// automatically computed.
 pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, Error> {
     if prefix.len() != 2 {
-        return Err(Error::InvalidPrefixLength { was: prefix.len() });
+        return Err(Error::InvalidPrefixStringLength { was: prefix.len() });
     }
     let prefix: &[u8] = &prefix.as_bytes()[0..2];
     validate_prefix_format(prefix)?;
 
     if basic_code.len() != 9 {
-        return Err(Error::InvalidBasicCodeLength {
+        return Err(Error::InvalidBasicCodeStringLength {
             was: basic_code.len(),
         });
     }
@@ -184,11 +165,28 @@ pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, Error> {
     Ok(ISIN(bb))
 }
 
+/// Test whether or not the passed string is in valid ISIN _Payload_ format.
+fn validate_payload_format(payload: &[u8]) -> Result<&[u8], Error> {
+    if payload.len() != 11 {
+        return Err(Error::InvalidPayloadArrayLength { was: payload.len() });
+    }
+
+    // We slice out the _Prefix_ and _Basic Code_ fields and validate their formats.
+
+    let prefix: &[u8] = &payload[0..2];
+    validate_prefix_format(prefix)?;
+
+    let basic_code: &[u8] = &payload[2..11];
+    validate_basic_code_format(basic_code)?;
+
+    Ok(payload)
+}
+
 /// Test whether or not the passed string is in valid ISIN format, without producing a ISIN struct
 /// value.
-pub fn validate(value: &str) -> bool {
+pub fn validate(value: &str) -> Result<&[u8], Error> {
     if value.len() != 12 {
-        return false;
+        return Err(Error::InvalidValueStringLength { was: value.len() });
     }
 
     // We make the preliminary assumption that the string is pure ASCII, so we work with the
@@ -197,30 +195,19 @@ pub fn validate(value: &str) -> bool {
 
     let b = value.as_bytes();
 
-    // We slice out the three fields and validate their formats.
-
-    let prefix: &[u8] = &b[0..2];
-    if validate_prefix_format(prefix).is_err() {
-        return false;
+    if value.len() != 12 {
+        return Err(Error::InvalidValueArrayLength { was: value.len() });
     }
 
-    let basic_code: &[u8] = &b[2..11];
-    if validate_basic_code_format(basic_code).is_err() {
-        return false;
-    }
+    // We slice out the _Payload_ and _Check Digit_ and validate their formats, as well as the value of the _Check Digit_.
 
-    let cd = b[11];
-    if validate_check_digit_format(cd).is_err() {
-        return false;
-    }
+    let payload: &[u8] = &b[0..11];
+    validate_payload_format(payload)?;
 
-    let payload = &b[0..11];
+    let check_digit = b[11];
+    validate_check_digit_value(payload, check_digit)?;
 
-    let computed_check_digit = compute_check_digit(payload);
-
-    let incorrect_check_digit = cd != computed_check_digit;
-
-    !incorrect_check_digit
+    Ok(b)
 }
 
 #[doc = include_str!("../README.md")]
@@ -391,38 +378,38 @@ mod tests {
 
     #[test]
     fn validate_examples_from_standard_annex_c() {
-        assert!(validate("ES0SI0000005")); // Example 1, page 10: "IBEX 35"
-        assert!(validate("JP3788600009")); // Example 2, page 11: "Hitachi Ltd. Shares"
-        assert!(validate("DE000A0GNPZ3")); // Example 3, page 11: "Allianz Finance II 5 3/8% without expiration date"
+        assert!(validate("ES0SI0000005").is_ok()); // Example 1, page 10: "IBEX 35"
+        assert!(validate("JP3788600009").is_ok()); // Example 2, page 11: "Hitachi Ltd. Shares"
+        assert!(validate("DE000A0GNPZ3").is_ok()); // Example 3, page 11: "Allianz Finance II 5 3/8% without expiration date"
     }
 
     #[test]
     fn validate_examples_from_standard_annex_e() {
-        assert!(validate("JP3788600009")); // Page 13
-        assert!(validate("US9047847093")); // Page 13
-        assert!(validate("IE00BFXC1P95")); // Page 13
-        assert!(validate("DE000A0GNPZ3")); // Page 13
-        assert!(validate("XS2021448886")); // Page 13
-        assert!(validate("US36962GXZ26")); // Page 13
-        assert!(validate("FR0000571077")); // Page 13
-        assert!(validate("US277847UB38")); // Page 13
-        assert!(validate("US65412AEW80")); // Page 13
-        assert!(validate("GB00BF0FCW58")); // Page 13
-        assert!(validate("FR0000312928")); // Page 13
-        assert!(validate("DE000DL3T7M1")); // Page 13
+        assert!(validate("JP3788600009").is_ok()); // Page 13
+        assert!(validate("US9047847093").is_ok()); // Page 13
+        assert!(validate("IE00BFXC1P95").is_ok()); // Page 13
+        assert!(validate("DE000A0GNPZ3").is_ok()); // Page 13
+        assert!(validate("XS2021448886").is_ok()); // Page 13
+        assert!(validate("US36962GXZ26").is_ok()); // Page 13
+        assert!(validate("FR0000571077").is_ok()); // Page 13
+        assert!(validate("US277847UB38").is_ok()); // Page 13
+        assert!(validate("US65412AEW80").is_ok()); // Page 13
+        assert!(validate("GB00BF0FCW58").is_ok()); // Page 13
+        assert!(validate("FR0000312928").is_ok()); // Page 13
+        assert!(validate("DE000DL3T7M1").is_ok()); // Page 13
 
-        assert!(validate("ES0A02234250")); // Page 14
-        assert!(validate("EZR9HY1361L7")); // Page 14
-        assert!(validate("CH0107166065")); // Page 14
-        assert!(validate("XS0313614355")); // Page 14
-        assert!(validate("DE000A0AE077")); // Page 14
-        assert!(validate("CH0002813860")); // Page 14
-        assert!(validate("TRLTCMB00045")); // Page 14
-        assert!(validate("ES0SI0000005")); // Page 14
-        assert!(validate("GB00B56Z6W79")); // Page 14
-        assert!(validate("AU000000SKI7")); // Page 14
-        assert!(validate("EU000A1RRN98")); // Page 14
-        assert!(validate("LI0024807526")); // Page 14
+        assert!(validate("ES0A02234250").is_ok()); // Page 14
+        assert!(validate("EZR9HY1361L7").is_ok()); // Page 14
+        assert!(validate("CH0107166065").is_ok()); // Page 14
+        assert!(validate("XS0313614355").is_ok()); // Page 14
+        assert!(validate("DE000A0AE077").is_ok()); // Page 14
+        assert!(validate("CH0002813860").is_ok()); // Page 14
+        assert!(validate("TRLTCMB00045").is_ok()); // Page 14
+        assert!(validate("ES0SI0000005").is_ok()); // Page 14
+        assert!(validate("GB00B56Z6W79").is_ok()); // Page 14
+        assert!(validate("AU000000SKI7").is_ok()); // Page 14
+        assert!(validate("EU000A1RRN98").is_ok()); // Page 14
+        assert!(validate("LI0024807526").is_ok()); // Page 14
     }
 
     #[test]
