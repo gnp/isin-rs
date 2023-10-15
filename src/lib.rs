@@ -204,7 +204,6 @@ pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, Error> {
 /// value.
 pub fn validate(value: &str) -> bool {
     if value.len() != 12 {
-        println!("Bad length: {value:?}");
         return false;
     }
 
