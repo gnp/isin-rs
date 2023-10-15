@@ -86,7 +86,7 @@ fn main() {
                     println!("{isin}");
                 }
             }
-            Err(isin::ISINError::IncorrectCheckDigit {
+            Err(isin::Error::IncorrectCheckDigit {
                 was: _,
                 expected: _,
             }) => {

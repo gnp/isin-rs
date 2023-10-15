@@ -3,14 +3,13 @@
 //!
 //! Error type for ISIN parsing and building.
 
-use std::error::Error;
 use std::fmt::Formatter;
 use std::fmt::{Debug, Display};
 
 /// All the ways parsing or building could fail.
 #[non_exhaustive]
 #[derive(Clone, PartialEq, Eq)]
-pub enum ISINError {
+pub enum Error {
     /// The input length is not exactly 12 bytes.
     InvalidLength {
         /// The length we found
@@ -55,22 +54,22 @@ pub enum ISINError {
     },
 }
 
-impl Debug for ISINError {
+impl Debug for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ISINError::InvalidLength { was } => {
+            Error::InvalidLength { was } => {
                 write!(f, "InvalidLength {{ was: {was:?} }}")
             }
-            ISINError::InvalidPayloadLength { was } => {
+            Error::InvalidPayloadLength { was } => {
                 write!(f, "InvalidPayloadLength {{ was: {was:?} }}")
             }
-            ISINError::InvalidPrefixLength { was } => {
+            Error::InvalidPrefixLength { was } => {
                 write!(f, "InvalidPrefixLength {{ was: {was:?} }}")
             }
-            ISINError::InvalidBasicCodeLength { was } => {
+            Error::InvalidBasicCodeLength { was } => {
                 write!(f, "InvalidBasicCodeLength {{ was: {was:?} }}")
             }
-            ISINError::InvalidPrefix { was } => match std::str::from_utf8(was) {
+            Error::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
                     write!(f, "InvalidPrefix {{ was: {s:?} }}")
                 }
@@ -78,7 +77,7 @@ impl Debug for ISINError {
                     write!(f, "InvalidPrefix {{ was: (invalid UTF-8) {was:?} }}")
                 }
             },
-            ISINError::InvalidBasicCode { was } => match std::str::from_utf8(was) {
+            Error::InvalidBasicCode { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
                     write!(f, "InvalidBasicCode {{ was: {s:?} }}")
                 }
@@ -86,10 +85,10 @@ impl Debug for ISINError {
                     write!(f, "InvalidBasicCode {{ was: (invalid UTF-8) {was:?} }}")
                 }
             },
-            ISINError::InvalidCheckDigit { was } => {
+            Error::InvalidCheckDigit { was } => {
                 write!(f, "InvalidCheckDigit {{ was: {:?} }}", char::from(*was))
             }
-            ISINError::IncorrectCheckDigit { was, expected } => {
+            Error::IncorrectCheckDigit { was, expected } => {
                 write!(
                     f,
                     "IncorrectCheckDigit {{ was: {:?}, expected: {:?} }}",
@@ -101,22 +100,22 @@ impl Debug for ISINError {
     }
 }
 
-impl Display for ISINError {
+impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ISINError::InvalidLength { was } => {
+            Error::InvalidLength { was } => {
                 write!(f, "invalid length {was} bytes when expecting 12")
             }
-            ISINError::InvalidPayloadLength { was } => {
+            Error::InvalidPayloadLength { was } => {
                 write!(f, "invalid Payload length {was} bytes when expecting 11")
             }
-            ISINError::InvalidPrefixLength { was } => {
+            Error::InvalidPrefixLength { was } => {
                 write!(f, "invalid Prefix length {was} bytes when expecting 2")
             }
-            ISINError::InvalidBasicCodeLength { was } => {
+            Error::InvalidBasicCodeLength { was } => {
                 write!(f, "invalid Basic Code length {was} bytes when expecting 9")
             }
-            ISINError::InvalidPrefix { was } => match std::str::from_utf8(was) {
+            Error::InvalidPrefix { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
                     write!(
                         f,
@@ -129,7 +128,7 @@ impl Display for ISINError {
                     )
                 }
             },
-            ISINError::InvalidBasicCode { was } => match std::str::from_utf8(was) {
+            Error::InvalidBasicCode { was } => match std::str::from_utf8(was) {
                 Ok(s) => {
                     write!(
                         f,
@@ -142,14 +141,14 @@ impl Display for ISINError {
                     )
                 }
             },
-            ISINError::InvalidCheckDigit { was } => {
+            Error::InvalidCheckDigit { was } => {
                 write!(
                     f,
                     "check digit {:?} is not one ASCII decimal digit",
                     *was as char
                 )
             }
-            ISINError::IncorrectCheckDigit { was, expected } => {
+            Error::IncorrectCheckDigit { was, expected } => {
                 write!(
                     f,
                     "incorrect check digit {:?} when expecting {:?}",
@@ -161,45 +160,45 @@ impl Display for ISINError {
     }
 }
 
-impl Error for ISINError {}
+impl std::error::Error for Error {}
 
 #[cfg(test)]
 mod tests {
-    use crate::ISINError;
+    use super::Error;
 
     #[test]
     fn render_display() {
         let errors = [
             (
-                ISINError::InvalidLength { was: 10 },
+                Error::InvalidLength { was: 10 },
                 "invalid length 10 bytes when expecting 12",
             ),
             (
-                ISINError::InvalidPayloadLength { was: 8 },
+                Error::InvalidPayloadLength { was: 8 },
                 "invalid Payload length 8 bytes when expecting 11",
             ),
             (
-                ISINError::InvalidPrefixLength { was: 1 },
+                Error::InvalidPrefixLength { was: 1 },
                 "invalid Prefix length 1 bytes when expecting 2",
             ),
             (
-                ISINError::InvalidBasicCodeLength { was: 8 },
+                Error::InvalidBasicCodeLength { was: 8 },
                 "invalid Basic Code length 8 bytes when expecting 9",
             ),
             (
-                ISINError::InvalidPrefix { was: *b"A{" },
+                Error::InvalidPrefix { was: *b"A{" },
                 "prefix \"A{\" is not two uppercase ASCII alphabetic characters",
             ),
             (
-                ISINError::InvalidBasicCode { was: *b"ABCDEFGH{" },
+                Error::InvalidBasicCode { was: *b"ABCDEFGH{" },
                 "basic code \"ABCDEFGH{\" is not nine uppercase ASCII alphanumeric characters",
             ),
             (
-                ISINError::InvalidCheckDigit { was: b':' },
+                Error::InvalidCheckDigit { was: b':' },
                 "check digit ':' is not one ASCII decimal digit",
             ),
             (
-                ISINError::IncorrectCheckDigit {
+                Error::IncorrectCheckDigit {
                     was: b'5',
                     expected: b'6',
                 },
@@ -216,35 +215,35 @@ mod tests {
     fn render_debug() {
         let errors = [
             (
-                ISINError::InvalidLength { was: 10 },
+                Error::InvalidLength { was: 10 },
                 "InvalidLength { was: 10 }",
             ),
             (
-                ISINError::InvalidPayloadLength { was: 8 },
+                Error::InvalidPayloadLength { was: 8 },
                 "InvalidPayloadLength { was: 8 }",
             ),
             (
-                ISINError::InvalidPrefixLength { was: 1 },
+                Error::InvalidPrefixLength { was: 1 },
                 "InvalidPrefixLength { was: 1 }",
             ),
             (
-                ISINError::InvalidBasicCodeLength { was: 8 },
+                Error::InvalidBasicCodeLength { was: 8 },
                 "InvalidBasicCodeLength { was: 8 }",
             ),
             (
-                ISINError::InvalidPrefix { was: *b"A{" },
+                Error::InvalidPrefix { was: *b"A{" },
                 "InvalidPrefix { was: \"A{\" }",
             ),
             (
-                ISINError::InvalidBasicCode { was: *b"ABCDEFGH{" },
+                Error::InvalidBasicCode { was: *b"ABCDEFGH{" },
                 "InvalidBasicCode { was: \"ABCDEFGH{\" }",
             ),
             (
-                ISINError::InvalidCheckDigit { was: b':' },
+                Error::InvalidCheckDigit { was: b':' },
                 "InvalidCheckDigit { was: ':' }",
             ),
             (
-                ISINError::IncorrectCheckDigit {
+                Error::IncorrectCheckDigit {
                     was: b'5',
                     expected: b'6',
                 },

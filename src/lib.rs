@@ -41,11 +41,15 @@ pub mod checksum;
 use checksum::checksum_table;
 
 pub mod error;
-pub use error::ISINError;
+pub use error::Error;
 
 /// Type alias for backward compatibility. Do not use in new code.
-#[deprecated(since = "0.1.8", note = "please use `ISINError` instead")]
-pub type ParseError = ISINError;
+#[deprecated(since = "0.1.8", note = "please use `Error` instead")]
+pub type ParseError = Error;
+
+/// Type alias for backward compatibility. Do not use in new code.
+#[deprecated(since = "0.1.18", note = "please use `Error` instead")]
+pub type ISINError = Error;
 
 /// Compute the _check digit_ for an array of u8. No attempt is made to ensure the input string
 /// is in the ISIN payload format or length. If an illegal character (not an ASCII digit and not
@@ -55,31 +59,31 @@ pub fn compute_check_digit(s: &[u8]) -> u8 {
     b'0' + sum
 }
 
-fn validate_prefix_format(cc: &[u8]) -> Result<(), ISINError> {
+fn validate_prefix_format(cc: &[u8]) -> Result<(), Error> {
     for b in cc {
         if !(b.is_ascii_alphabetic() && b.is_ascii_uppercase()) {
             let mut cc_copy: [u8; 2] = [0; 2];
             cc_copy.copy_from_slice(cc);
-            return Err(ISINError::InvalidPrefix { was: cc_copy });
+            return Err(Error::InvalidPrefix { was: cc_copy });
         }
     }
     Ok(())
 }
 
-fn validate_basic_code_format(si: &[u8]) -> Result<(), ISINError> {
+fn validate_basic_code_format(si: &[u8]) -> Result<(), Error> {
     for b in si {
         if !(b.is_ascii_digit() || (b.is_ascii_alphabetic() && b.is_ascii_uppercase())) {
             let mut si_copy: [u8; 9] = [0; 9];
             si_copy.copy_from_slice(si);
-            return Err(ISINError::InvalidBasicCode { was: si_copy });
+            return Err(Error::InvalidBasicCode { was: si_copy });
         }
     }
     Ok(())
 }
 
-fn validate_check_digit_format(cd: u8) -> Result<(), ISINError> {
+fn validate_check_digit_format(cd: u8) -> Result<(), Error> {
     if !cd.is_ascii_digit() {
-        Err(ISINError::InvalidCheckDigit { was: cd })
+        Err(Error::InvalidCheckDigit { was: cd })
     } else {
         Ok(())
     }
@@ -88,11 +92,11 @@ fn validate_check_digit_format(cd: u8) -> Result<(), ISINError> {
 /// Parse a string to a valid ISIN or an error message, requiring the string to already be only
 /// uppercase alphanumerics with no leading or trailing whitespace in addition to being the
 /// right length and format.
-pub fn parse(value: &str) -> Result<ISIN, ISINError> {
+pub fn parse(value: &str) -> Result<ISIN, Error> {
     let v: String = value.into();
 
     if v.len() != 12 {
-        return Err(ISINError::InvalidLength { was: v.len() });
+        return Err(Error::InvalidLength { was: v.len() });
     }
 
     // We make the preliminary assumption that the string is pure ASCII, so we work with the
@@ -121,7 +125,7 @@ pub fn parse(value: &str) -> Result<ISIN, ISINError> {
 
     let incorrect_check_digit = cd != computed_check_digit;
     if incorrect_check_digit {
-        return Err(ISINError::IncorrectCheckDigit {
+        return Err(Error::IncorrectCheckDigit {
             was: cd,
             expected: computed_check_digit,
         });
@@ -135,14 +139,14 @@ pub fn parse(value: &str) -> Result<ISIN, ISINError> {
 
 /// Forwards to `parse()` for backward compatibility. Do not use in new code.
 #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
-pub fn parse_strict(value: &str) -> Result<ISIN, ISINError> {
+pub fn parse_strict(value: &str) -> Result<ISIN, Error> {
     parse(value)
 }
 
 /// Parse a string to a valid ISIN or an error, allowing the string to contain leading
 /// or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
 /// and format.
-pub fn parse_loose(value: &str) -> Result<ISIN, ISINError> {
+pub fn parse_loose(value: &str) -> Result<ISIN, Error> {
     let uc = value.to_ascii_uppercase();
     let temp = uc.trim();
     parse(temp)
@@ -150,9 +154,9 @@ pub fn parse_loose(value: &str) -> Result<ISIN, ISINError> {
 
 /// Build an ISIN from a _Payload_ (an already-concatenated _Prefix_ and _Basic Code_). The
 /// _Check Digit is automatically computed.
-pub fn build_from_payload(payload: &str) -> Result<ISIN, ISINError> {
+pub fn build_from_payload(payload: &str) -> Result<ISIN, Error> {
     if payload.len() != 11 {
-        return Err(ISINError::InvalidPayloadLength { was: payload.len() });
+        return Err(Error::InvalidPayloadLength { was: payload.len() });
     }
     let b = &payload.as_bytes()[0..11];
 
@@ -172,15 +176,15 @@ pub fn build_from_payload(payload: &str) -> Result<ISIN, ISINError> {
 
 /// Build an ISIN from its parts: an _Prefix_ and an _Basic Code_. The _Check Digit_ is
 /// automatically computed.
-pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, ISINError> {
+pub fn build_from_parts(prefix: &str, basic_code: &str) -> Result<ISIN, Error> {
     if prefix.len() != 2 {
-        return Err(ISINError::InvalidPrefixLength { was: prefix.len() });
+        return Err(Error::InvalidPrefixLength { was: prefix.len() });
     }
     let prefix: &[u8] = &prefix.as_bytes()[0..2];
     validate_prefix_format(prefix)?;
 
     if basic_code.len() != 9 {
-        return Err(ISINError::InvalidBasicCodeLength {
+        return Err(Error::InvalidBasicCodeLength {
             was: basic_code.len(),
         });
     }
@@ -311,7 +315,7 @@ impl serde::Serialize for ISIN {
 }
 
 impl FromStr for ISIN {
-    type Err = ISINError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_loose(s)
@@ -326,7 +330,7 @@ impl ISIN {
 
     /// Forwards to crate-level `parse()` for backward compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
-    pub fn parse_strict<S>(value: S) -> Result<ISIN, ISINError>
+    pub fn parse_strict<S>(value: S) -> Result<ISIN, Error>
     where
         S: Into<String>,
     {
@@ -336,7 +340,7 @@ impl ISIN {
 
     /// Forwards to crate-level `parse_loose()` for backward compatibility. Do not use in new code.
     #[deprecated(since = "0.1.7", note = "please use `isin::parse_loose` instead")]
-    pub fn parse_loose<S>(value: S) -> Result<ISIN, ISINError>
+    pub fn parse_loose<S>(value: S) -> Result<ISIN, Error>
     where
         S: Into<String>,
     {
@@ -485,7 +489,7 @@ mod tests {
     #[test]
     fn reject_lowercase_prefix_if_strict() {
         match parse("us0378331005") {
-            Err(ISINError::InvalidPrefix { was: _ }) => {} // Ok
+            Err(Error::InvalidPrefix { was: _ }) => {} // Ok
             Err(err) => {
                 panic!(
                     "Expected Err(InvalidPrefix {{ ... }}), but got: Err({:?})",
@@ -504,7 +508,7 @@ mod tests {
     #[test]
     fn reject_lowercase_basic_code_if_strict() {
         match parse("US09739d1000") {
-            Err(ISINError::InvalidBasicCode { was: _ }) => {} // Ok
+            Err(Error::InvalidBasicCode { was: _ }) => {} // Ok
             Err(err) => {
                 panic!(
                     "Expected Err(InvalidBasicCode {{ ... }}), but got: Err({:?})",
