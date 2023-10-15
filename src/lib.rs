@@ -43,14 +43,6 @@ use checksum::checksum_table;
 pub mod error;
 pub use error::Error;
 
-/// Type alias for backward compatibility. Do not use in new code.
-#[deprecated(since = "0.1.8", note = "please use `Error` instead")]
-pub type ParseError = Error;
-
-/// Type alias for backward compatibility. Do not use in new code.
-#[deprecated(since = "0.1.18", note = "please use `Error` instead")]
-pub type ISINError = Error;
-
 /// Compute the _check digit_ for an array of u8. No attempt is made to ensure the input string
 /// is in the ISIN payload format or length. If an illegal character (not an ASCII digit and not
 /// an ASCII uppercase letter) is encountered, this function will panic.
@@ -133,12 +125,6 @@ pub fn parse(value: &str) -> Result<ISIN, Error> {
     bb.copy_from_slice(b);
 
     Ok(ISIN(bb))
-}
-
-/// Forwards to `parse()` for backward compatibility. Do not use in new code.
-#[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
-pub fn parse_strict(value: &str) -> Result<ISIN, Error> {
-    parse(value)
 }
 
 /// Parse a string to a valid ISIN or an error, allowing the string to contain leading
@@ -325,52 +311,14 @@ impl ISIN {
         &self.0[..]
     }
 
-    /// Forwards to crate-level `parse()` for backward compatibility. Do not use in new code.
-    #[deprecated(since = "0.1.7", note = "please use `isin::parse` instead")]
-    pub fn parse_strict<S>(value: S) -> Result<ISIN, Error>
-    where
-        S: Into<String>,
-    {
-        let v: String = value.into();
-        crate::parse(&v)
-    }
-
-    /// Forwards to crate-level `parse_loose()` for backward compatibility. Do not use in new code.
-    #[deprecated(since = "0.1.7", note = "please use `isin::parse_loose` instead")]
-    pub fn parse_loose<S>(value: S) -> Result<ISIN, Error>
-    where
-        S: Into<String>,
-    {
-        let v: String = value.into();
-        crate::parse_loose(&v)
-    }
-
-    /// Return a string representation of the ISIN.
-    #[deprecated(since = "0.1.7", note = "please use `to_string` instead")]
-    pub fn value(&self) -> &str {
-        unsafe { from_utf8_unchecked(&self.0[..]) } // This is safe because we know it is ASCII
-    }
-
     /// Return just the _Prefix_ portion of the ISIN.
     pub fn prefix(&self) -> &str {
         unsafe { from_utf8_unchecked(&self.0[0..2]) } // This is safe because we know it is ASCII
     }
 
-    /// Return just the _Prefix_ portion of the ISIN.
-    #[deprecated(since = "0.1.8", note = "please use `prefix` instead")]
-    pub fn country_code(&self) -> &str {
-        self.prefix()
-    }
-
     /// Return just the _Basic Code_ portion of the ISIN.
     pub fn basic_code(&self) -> &str {
         unsafe { from_utf8_unchecked(&self.0[2..11]) } // This is safe because we know it is ASCII
-    }
-
-    /// Return just the _Basic Code_ portion of the ISIN.
-    #[deprecated(since = "0.1.8", note = "please use `basic_code` instead")]
-    pub fn security_identifier(&self) -> &str {
-        self.basic_code()
     }
 
     /// Return the _Payload_ &mdash; everything except the _Check Digit_.
