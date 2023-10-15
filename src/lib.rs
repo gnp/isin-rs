@@ -93,17 +93,15 @@ fn validate_check_digit_format(cd: u8) -> Result<(), Error> {
 /// uppercase alphanumerics with no leading or trailing whitespace in addition to being the
 /// right length and format.
 pub fn parse(value: &str) -> Result<ISIN, Error> {
-    let v: String = value.into();
-
-    if v.len() != 12 {
-        return Err(Error::InvalidLength { was: v.len() });
+    if value.len() != 12 {
+        return Err(Error::InvalidLength { was: value.len() });
     }
 
     // We make the preliminary assumption that the string is pure ASCII, so we work with the
     // underlying bytes. If there is Unicode in the string, the bytes will be outside the
     // allowed range and format validations will fail.
 
-    let b = v.as_bytes();
+    let b = value.as_bytes();
 
     // We slice out the three fields and validate their formats.
 
