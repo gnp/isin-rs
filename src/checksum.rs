@@ -50,25 +50,38 @@ fn char_value(c: &u8) -> u8 {
 /// A direct translation of the formula definition, in the functional style.
 #[allow(dead_code)]
 pub fn checksum_functional(s: &[u8]) -> u8 {
-    fn digits_of(x: u8) -> Vec<u8> {
-        if x >= 10 {
-            vec![x / 10, x % 10]
-        } else {
-            vec![x]
+    struct Digits(Option<u8>, Option<u8>);
+    impl Digits {
+        fn of(x: u8) -> Self {
+            if x >= 10 {
+                Digits(Some(x / 10), Some(x % 10))
+            } else {
+                Digits(Some(x), None)
+            }
         }
     }
-
+    impl Iterator for Digits {
+        type Item = u8;
+        fn next(&mut self) -> Option<Self::Item> {
+            self.0.take().or_else(|| self.1.take())
+        }
+    }
+    impl DoubleEndedIterator for Digits {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            self.1.take().or_else(|| self.0.take())
+        }
+    }
     let sum: u32 = s
         .iter()
         .map(char_value)
-        .flat_map(digits_of)
+        .flat_map(Digits::of)
         .rev()
         .enumerate()
         .flat_map(|(i, x)| {
             if (i % 2) == 0 {
-                digits_of(x * 2)
+                Digits::of(x * 2)
             } else {
-                digits_of(x)
+                Digits::of(x)
             }
         })
         .map(|x| x as u32)
@@ -167,6 +180,7 @@ pub fn checksum_table(s: &[u8]) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::string::ToString;
     use proptest::prelude::*;
 
     // Ensure the table-driven method gets the same answer as the functional style implementation

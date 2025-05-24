@@ -3,8 +3,8 @@
 //!
 //! Error type for ISIN parsing and building.
 
-use std::fmt::Formatter;
-use std::fmt::{Debug, Display};
+use core::fmt::Formatter;
+use core::fmt::{Debug, Display};
 
 /// All the ways parsing or building could fail.
 #[non_exhaustive]
@@ -75,7 +75,7 @@ pub enum Error {
 }
 
 impl Debug for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::InvalidValueStringLength { was } => {
                 write!(f, "InvalidValueStringLength {{ was: {was:?} }}")
@@ -101,7 +101,7 @@ impl Debug for Error {
             Error::InvalidBasicCodeArrayLength { was } => {
                 write!(f, "InvalidBasicCodeArrayLength {{ was: {was:?} }}")
             }
-            Error::InvalidPrefix { was } => match std::str::from_utf8(was) {
+            Error::InvalidPrefix { was } => match core::str::from_utf8(was) {
                 Ok(s) => {
                     write!(f, "InvalidPrefix {{ was: {s:?} }}")
                 }
@@ -109,7 +109,7 @@ impl Debug for Error {
                     write!(f, "InvalidPrefix {{ was: (invalid UTF-8) {was:?} }}")
                 }
             },
-            Error::InvalidBasicCode { was } => match std::str::from_utf8(was) {
+            Error::InvalidBasicCode { was } => match core::str::from_utf8(was) {
                 Ok(s) => {
                     write!(f, "InvalidBasicCode {{ was: {s:?} }}")
                 }
@@ -133,7 +133,7 @@ impl Debug for Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::InvalidValueStringLength { was } => {
                 write!(
@@ -183,7 +183,7 @@ impl Display for Error {
                     "invalid Basic Code array length {was} bytes when expecting 9"
                 )
             }
-            Error::InvalidPrefix { was } => match std::str::from_utf8(was) {
+            Error::InvalidPrefix { was } => match core::str::from_utf8(was) {
                 Ok(s) => {
                     write!(
                         f,
@@ -196,7 +196,7 @@ impl Display for Error {
                     )
                 }
             },
-            Error::InvalidBasicCode { was } => match std::str::from_utf8(was) {
+            Error::InvalidBasicCode { was } => match core::str::from_utf8(was) {
                 Ok(s) => {
                     write!(
                         f,
@@ -228,7 +228,7 @@ impl Display for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl core::error::Error for Error {}
 
 #[cfg(test)]
 mod tests {
