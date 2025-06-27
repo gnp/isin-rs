@@ -1,3 +1,4 @@
+#![no_std]
 #![warn(missing_docs)]
 //! # isin
 //!
@@ -38,9 +39,13 @@
 //!   Generates schemas that match the serde deserialization behavior.
 //!
 
-use std::fmt;
-use std::str::from_utf8_unchecked;
-use std::str::FromStr;
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
+use core::fmt;
+use core::str::from_utf8_unchecked;
+use core::str::FromStr;
 
 pub mod checksum;
 
@@ -124,9 +129,17 @@ pub fn parse(value: &str) -> Result<ISIN, Error> {
 /// or trailing whitespace and/or lowercase letters as long as it is otherwise the right length
 /// and format.
 pub fn parse_loose(value: &str) -> Result<ISIN, Error> {
-    let uc = value.to_ascii_uppercase();
-    let temp = uc.trim();
-    parse(temp)
+    let value = value.trim();
+    if value.len() != 12 {
+        return Err(Error::InvalidValueStringLength { was: value.len() });
+    }
+
+    let mut bb = [0u8; 12];
+    bb.copy_from_slice(value.as_bytes());
+    bb.make_ascii_uppercase();
+
+    let value = unsafe { from_utf8_unchecked(&bb) };
+    parse(value)
 }
 
 /// Build an ISIN from a _Payload_ (an already-concatenated _Prefix_ and _Basic Code_). The
@@ -331,6 +344,7 @@ impl ISIN {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::string::ToString;
     use proptest::prelude::*;
 
     #[test]

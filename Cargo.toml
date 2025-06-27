@@ -10,6 +10,7 @@ categories = ["parsing"]
 readme = "README.md"
 repository = "https://github.com/gnp/isin-rs.git"
 include = []
+rust-version = "1.81"
 
 [dev-dependencies]
 proptest = "1.3.1"
